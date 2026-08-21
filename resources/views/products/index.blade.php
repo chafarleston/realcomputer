@@ -1,0 +1,136 @@
+@extends('layouts.admin')
+@section('title', 'Productos')
+@section('page_title', 'Productos')
+
+@section('content')
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Lista de Productos</h3>
+        <div class="card-tools">
+          <form method="GET" action="{{ route('products.index') }}" class="form-inline">
+            <input type="hidden" name="company_id" value="{{ $companyId ?? null }}">
+            <select name="filter" class="form-control form-control-sm mr-1" style="width:auto;" onchange="this.form.submit()">
+              <option value="all" {{ ($filter ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
+              <option value="simple" {{ ($filter ?? '') == 'simple' ? 'selected' : '' }}>Solo Simples</option>
+              <option value="composite" {{ ($filter ?? '') == 'composite' ? 'selected' : '' }}>Solo Compuestos</option>
+            </select>
+            <select name="search_type" class="form-control form-control-sm mr-1" style="width:auto;" onchange="updateSearchPlaceholder(this)">
+              <option value="descripcion" {{ request('search_type', 'descripcion') == 'descripcion' ? 'selected' : '' }}>Descripción</option>
+              <option value="codigo" {{ request('search_type') == 'codigo' ? 'selected' : '' }}>Código</option>
+              <option value="codigo_barras" {{ request('search_type') == 'codigo_barras' ? 'selected' : '' }}>Cód. Barras</option>
+              <option value="categoria" {{ request('search_type') == 'categoria' ? 'selected' : '' }}>Categoría</option>
+            </select>
+            <input type="text" name="search" class="form-control form-control-sm" placeholder="Buscar por descripción..." value="{{ request('search') }}" id="searchInput">
+            <button type="submit" class="btn btn-secondary btn-sm ml-1"><i class="fas fa-search"></i></button>
+            @if(request('search'))
+            <a href="{{ route('products.index', ['company_id' => $companyId ?? null]) }}" class="btn btn-link btn-sm ml-1">Limpiar</a>
+            @endif
+          </form>
+          <script>
+          function updateSearchPlaceholder(sel) {
+            const labels = { 'descripcion': 'Buscar por descripción...', 'codigo': 'Buscar por código...', 'codigo_barras': 'Buscar por código de barras...', 'categoria': 'Buscar por categoría...' };
+            document.getElementById('searchInput').placeholder = labels[sel.value] || 'Buscar...';
+          }
+          </script>
+          <a href="{{ route('products.create', ['company_id' => $companyId ?? null]) }}" class="btn btn-primary btn-sm ml-2">
+            <i class="fas fa-plus"></i> Nuevo
+          </a>
+          <a href="{{ route('products.composite.create', ['company_id' => $companyId ?? null]) }}" class="btn btn-warning btn-sm ml-1">
+            <i class="fas fa-boxes"></i> Producto Compuesto
+          </a>
+          <a href="{{ route('products.import.form', ['company_id' => $companyId ?? null]) }}" class="btn btn-success btn-sm ml-1">
+            <i class="fas fa-file-import"></i> Importar
+          </a>
+          <a href="{{ route('products.export', ['company_id' => $companyId ?? null]) }}" class="btn btn-info btn-sm ml-1">
+            <i class="fas fa-file-export"></i> Exportar
+          </a>
+        </div>
+      </div>
+      <div class="card-body table-responsive p-0">
+        <table class="table table-hover text-nowrap">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Cód. Barras</th>
+              <th>Descripción</th>
+              <th>Tipo</th>
+              <th>Categoría</th>
+              <th>Precio Venta</th>
+              <th>Precio Compra</th>
+              <th>Stock</th>
+              <th>Componentes</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @forelse($products as $product)
+            <tr>
+              <td>{{ $product->codigo }}</td>
+              <td>{{ $product->codigo_barras ?? '-' }}</td>
+              <td>{{ $product->descripcion }}</td>
+              <td>
+                @if($product->is_composite)
+                  <span class="badge badge-warning">Compuesto</span>
+                @else
+                  <span class="badge badge-info">Simple</span>
+                @endif
+              </td>
+              <td>{{ $product->category->nombre ?? '-' }}</td>
+              <td class="text-nowrap" title="Niveles 1-4">
+                <span class="font-weight-bold">S/ {{ number_format($product->precio, 2) }}</span>
+                @if(($product->precio_venta_n2 ?? 0) > 0 || ($product->precio_venta_n3 ?? 0) > 0 || ($product->precio_venta_n4 ?? 0) > 0)
+                  <br><small class="text-muted">{{ number_format($product->precio_venta_n2 ?? 0, 2) }} / {{ number_format($product->precio_venta_n3 ?? 0, 2) }} / {{ number_format($product->precio_venta_n4 ?? 0, 2) }}</small>
+                @endif
+              </td>
+              <td class="text-nowrap" title="Niveles 1-4">
+                <span>S/ {{ number_format($product->precio_compra ?? 0, 2) }}</span>
+                @if(($product->precio_compra_n2 ?? 0) > 0 || ($product->precio_compra_n3 ?? 0) > 0 || ($product->precio_compra_n4 ?? 0) > 0)
+                  <br><small class="text-muted">{{ number_format($product->precio_compra_n2 ?? 0, 2) }} / {{ number_format($product->precio_compra_n3 ?? 0, 2) }} / {{ number_format($product->precio_compra_n4 ?? 0, 2) }}</small>
+                @endif
+              </td>
+              <td>
+                @if($product->is_composite)
+                  <span class="text-muted">-</span>
+                @elseif($product->stock < 0)
+                  <span class="text-danger font-weight-bold">{{ $product->stock }}</span>
+                @elseif($product->stock == 0)
+                  <span class="text-warning font-weight-bold">{{ $product->stock }}</span>
+                @else
+                  {{ $product->stock }}
+                @endif
+              </td>
+              <td>
+                @if($product->is_composite)
+                  <span class="badge badge-secondary">{{ $product->components->count() }} prod.</span>
+                @else
+                  -
+                @endif
+              </td>
+              <td>
+                <a href="{{ route('products.show', $product) }}" class="btn btn-info btn-xs"><i class="fas fa-eye"></i></a>
+                @if($product->is_composite)
+                  <a href="{{ route('products.composite.edit', $product) }}" class="btn btn-warning btn-xs"><i class="fas fa-edit"></i></a>
+                @else
+                  <a href="{{ route('products.edit', $product) }}" class="btn btn-warning btn-xs"><i class="fas fa-edit"></i></a>
+                @endif
+                <form action="{{ route('products.duplicate', $product) }}" method="POST" style="display:inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-secondary btn-xs" title="Duplicar producto" onclick="return confirm('¿Duplicar este producto?')">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </form>
+              </td>
+            </tr>
+            @empty
+            <tr><td colspan="9" class="text-center">No hay productos</td></tr>
+            @endforelse
+          </tbody>
+        </table>
+        <div class="card-footer">{{ $products->links() }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+@endsection

@@ -1,0 +1,252 @@
+<?php use App\Models\Company; $company = Company::getMainCompany(); ?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Resumen de Caja</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 11px; margin: 0; padding: 10px; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+        .border-bottom { border-bottom: 1px solid #ddd; }
+        .border-top { border-bottom: 1px solid #000; }
+        .border-double { border-bottom: 2px solid #000; }
+        .py-1 { padding-top: 4px; padding-bottom: 4px; }
+        .py-2 { padding-top: 8px; padding-bottom: 8px; }
+        .mb-1 { margin-bottom: 4px; }
+        .mb-2 { margin-bottom: 8px; }
+        .mt-1 { margin-top: 4px; }
+        .mt-2 { margin-top: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        .header { text-align: center; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="bold" style="font-size:14px;">{{ $company->nombre_comercial ?? $company->razon_social }}</div>
+        <div>RUC: {{ $company->ruc }}</div>
+        <div class="bold" style="font-size:16px; margin-top:10px;">RESUMEN DE CAJA</div>
+        <div>Caja #{{ $cashregister->id }}</div>
+    </div>
+
+    <table>
+        <tr>
+            <td>Fecha:</td>
+            <td class="text-right">{{ $cashregister->fecha_apertura->format('d/m/Y H:i') }} - {{ $cashregister->fecha_cierre ? $cashregister->fecha_cierre->format('d/m/Y H:i') : 'Ahora' }}</td>
+        </tr>
+        <tr>
+            <td>Usuario:</td>
+            <td class="text-right">{{ $cashregister->user?->name ?? 'Eliminado' }}</td>
+        </tr>
+        <tr>
+            <td>Monto Apertura:</td>
+            <td class="text-right">S/ {{ number_format($cashregister->monto_apertura, 2) }}</td>
+        </tr>
+        <tr>
+            <td>Monto Cierre:</td>
+            <td class="text-right">S/ {{ number_format($cashregister->monto_cierre ?? 0, 2) }}</td>
+        </tr>
+    </table>
+
+    <div class="border-top py-2 mt-2 mb-1 bold">RESUMEN POR TIPO DE DOCUMENTO</div>
+    <table>
+        <tr class="bold border-bottom">
+            <td>Tipo</td>
+            <td class="text-right">Cantidad</td>
+            <td class="text-right">Total</td>
+        </tr>
+        <tr>
+            <td>Facturas (01):</td>
+            <td class="text-right">{{ $facturas->count() }}</td>
+            <td class="text-right">S/ {{ number_format($facturas->sum('total'), 2) }}</td>
+        </tr>
+        <tr>
+            <td>Boletas (03):</td>
+            <td class="text-right">{{ $boletas->count() }}</td>
+            <td class="text-right">S/ {{ number_format($boletas->sum('total'), 2) }}</td>
+        </tr>
+        <tr>
+            <td>Notas de Venta (NV):</td>
+            <td class="text-right">{{ $nvs->count() }}</td>
+            <td class="text-right">S/ {{ number_format($nvs->sum('total'), 2) }}</td>
+        </tr>
+        <tr class="bold border-top">
+            <td>TOTAL:</td>
+            <td class="text-right">{{ $facturas->count() + $boletas->count() + $nvs->count() }}</td>
+            <td class="text-right">S/ {{ number_format($cashregister->total_ventas, 2) }}</td>
+        </tr>
+    </table>
+
+    <div class="border-top py-2 mt-2 mb-1 bold">RESUMEN POR MÉTODO DE PAGO</div>
+    <table>
+        <tr>
+            <td>Efectivo:</td>
+            <td class="text-right">S/ {{ number_format($cashregister->ventas_efectivo, 2) }}</td>
+        </tr>
+        <tr>
+            <td>Tarjeta:</td>
+            <td class="text-right">S/ {{ number_format($cashregister->ventas_tarjeta, 2) }}</td>
+        </tr>
+        <tr>
+            <td>Yape:</td>
+            <td class="text-right">S/ {{ number_format($cashregister->ventas_yape, 2) }}</td>
+        </tr>
+        <tr>
+            <td>Plin:</td>
+            <td class="text-right">S/ {{ number_format($cashregister->ventas_plin, 2) }}</td>
+        </tr>
+        <tr>
+            <td>Otro:</td>
+            <td class="text-right">S/ {{ number_format($cashregister->ventas_otro, 2) }}</td>
+        </tr>
+        <tr class="bold border-top">
+            <td>TOTAL VENTAS:</td>
+            <td class="text-right">S/ {{ number_format($cashregister->total_ventas, 2) }}</td>
+        </tr>
+    </table>
+
+    <div class="border-top py-2 mt-2 mb-1 bold">COMPRAS</div>
+    <table>
+        <tr class="bold border-bottom">
+            <td>Tipo</td>
+            <td class="text-right">Cantidad</td>
+            <td class="text-right">Total</td>
+        </tr>
+        <tr>
+            <td>Compras (CO):</td>
+            <td class="text-right">{{ $compras->count() }}</td>
+            <td class="text-right">S/ {{ number_format($compras->sum('total'), 2) }}</td>
+        </tr>
+    </table>
+
+    <div class="border-top py-2 mt-2 mb-1 bold">INGRESOS Y GASTOS</div>
+    <table>
+        <tr>
+            <td>Ingresos:</td>
+            <td class="text-right">S/ {{ number_format($ingresos, 2) }}</td>
+        </tr>
+        <tr>
+            <td>Gastos:</td>
+            <td class="text-right">S/ {{ number_format($gastos, 2) }}</td>
+        </tr>
+    </table>
+
+    <div class="border-top py-2 mt-2 mb-1 bold">FLUJO DE CAJA DEL DIA</div>
+    <table>
+        <tr>
+            <td>1. Efectivo Inicial (Apertura):</td>
+            <td class="text-right">S/ {{ number_format($cashregister->monto_apertura, 2) }}</td>
+        </tr>
+        <tr>
+            <td>2. + Ventas:</td>
+            <td class="text-right">S/ {{ number_format($ventas->sum('total'), 2) }}</td>
+        </tr>
+        <tr>
+            <td>3. − Compras de Chatarra:</td>
+            <td class="text-right">S/ {{ number_format($compras->sum('total'), 2) }}</td>
+        </tr>
+        <tr>
+            <td>4. + Otros Ingresos:</td>
+            <td class="text-right">S/ {{ number_format($ingresos, 2) }}</td>
+        </tr>
+        <tr>
+            <td>5. − Gastos:</td>
+            <td class="text-right">S/ {{ number_format($gastos, 2) }}</td>
+        </tr>
+        <tr class="bold border-top">
+            <td>= SALDO RESULTANTE (efectivo en caja):</td>
+            <td class="text-right">S/ {{ number_format($saldo, 2) }}</td>
+        </tr>
+        <tr>
+            <td>Monto contado al cierre:</td>
+            <td class="text-right">S/ {{ number_format($cashregister->monto_cierre ?? 0, 2) }}</td>
+        </tr>
+        @php $diferencia = round(($cashregister->monto_cierre ?? 0) - $saldo, 2); @endphp
+        <tr class="bold">
+            <td>{{ $diferencia >= 0 ? 'Sobrante' : 'Faltante' }}:</td>
+            <td class="text-right">S/ {{ number_format(abs($diferencia), 2) }}</td>
+        </tr>
+    </table>
+
+    @if(count($categoriasVentas) > 0)
+    <div class="border-top py-2 mt-2 mb-1 bold">RESUMEN POR CATEGORÍA</div>
+    <table>
+        <tr class="bold border-bottom">
+            <td>Categoría</td>
+            <td class="text-right">Transacciones</td>
+            <td class="text-right">Total</td>
+        </tr>
+        @foreach($categoriasVentas as $categoria => $data)
+        <tr>
+            <td>{{ $categoria }}</td>
+            <td class="text-right">{{ $data['cantidad'] }}</td>
+            <td class="text-right">S/ {{ number_format($data['total'], 2) }}</td>
+        </tr>
+        @endforeach
+    </table>
+    @endif
+
+    @if(count($productosVendidos) > 0)
+    <div class="border-top py-2 mt-2 mb-1 bold">PRODUCTOS VENDIDOS</div>
+    <table>
+        <tr class="bold border-bottom">
+            <td>Producto</td>
+            <td class="text-right">Cantidad</td>
+            <td class="text-right">Total</td>
+        </tr>
+        @foreach($productosVendidos as $producto => $data)
+        <tr>
+            <td>{{ $producto }}</td>
+            <td class="text-right">{{ number_format($data['cantidad'], 2) }}</td>
+            <td class="text-right">S/ {{ number_format($data['total'], 2) }}</td>
+        </tr>
+        @endforeach
+    </table>
+    @endif
+
+    <div class="border-top py-2 mt-2 mb-1 bold">LISTA DE COMPROBANTES</div>
+    <table>
+        <tr class="bold border-bottom">
+            <td>Documento</td>
+            <td>Cliente</td>
+            <td class="text-right">Total</td>
+            <td>Método Pago</td>
+        </tr>
+        @foreach($ventas as $venta)
+        <tr>
+            <td>{{ $venta->full_number }}</td>
+            <td>{{ $venta->customer->nombre ?? 'Cliente Varios' }}</td>
+            <td class="text-right">S/ {{ number_format($venta->total, 2) }}</td>
+            <td>{{ $venta->metodo_pago ?? 'Efectivo' }}</td>
+        </tr>
+        @endforeach
+    </table>
+
+    @if(count($lineasEliminadas) > 0)
+    <div class="border-top py-2 mt-2 mb-1 bold">REPORTE DE LÍNEAS ELIMINADAS</div>
+    <div style="margin-bottom:4px; font-size:10px;">Hay {{ count($lineasEliminadas) }} línea(s) eliminada(s) en el Sistema</div>
+    <table>
+        <tr class="bold border-bottom">
+            <td style="text-align:center;">Cant.</td>
+            <td>Producto</td>
+            <td>Eliminado por</td>
+            <td>Hora</td>
+        </tr>
+        @foreach($lineasEliminadas as $item)
+            <tr>
+                <td style="text-align:center; padding:3px; font-size:10px;">x{{ number_format($item->quantity, 0) }}</td>
+                <td style="padding:3px; font-size:10px;">{{ $item->product_name }}</td>
+                <td style="padding:3px; font-size:10px;">{{ $item->cancelledBy->name ?? '-' }}</td>
+                <td style="text-align:center; padding:3px; font-size:10px;">{{ $item->cancelled_at ? $item->cancelled_at->format('H:i') : '-' }}</td>
+            </tr>
+        @endforeach
+    </table>
+    @endif
+
+    <div class="text-center mt-4" style="font-size:9px;">
+        Documento generado el {{ now()->format('d/m/Y H:i') }}
+    </div>
+</body>
+</html>

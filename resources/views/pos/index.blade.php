@@ -1,0 +1,975 @@
+@extends('layouts.admin')
+@section('title', 'Punto de Venta')
+@section('page_title', 'Punto de Venta')
+
+@push('styles')
+<style>
+    body { overflow: hidden; }
+    .main-footer, .content-header { display: none !important; }
+    .content-wrapper { padding-top: 0 !important; }
+    
+    .pos-container {
+        display: flex;
+        height: calc(100vh - 60px);
+        width: 100%;
+        gap: 10px;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+    
+    /* Columna 1: 65% Categorías/Productos */
+    .categories-section {
+        width: 65%;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    .categories-header {
+        padding: 15px;
+        border-bottom: 2px solid #eee;
+        flex-shrink: 0;
+    }
+    
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        padding: 15px;
+        overflow-y: auto;
+        height: 100%;
+    }
+    
+    .category-card {
+        background: #fff;
+        border-radius: 15px;
+        padding: 25px 15px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+        border: 3px solid transparent;
+        min-height: 100px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    .category-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    .category-card i {
+        font-size: 32px;
+        margin-bottom: 10px;
+    }
+    .category-card h5 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: bold;
+    }
+    .category-card small {
+        font-size: 10px;
+        color: #666;
+        margin-top: 5px;
+    }
+    
+    /* Productos */
+    .products-section {
+        display: none;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .products-header {
+        padding: 10px 15px;
+        background: #f8f9fa;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        padding: 15px 15px 30px 15px;
+        overflow-y: auto;
+        flex: 1;
+        align-content: start;
+        min-height: 0;
+    }
+    
+    .product-card {
+        background: #fff;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+        min-height: 85px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+    .product-card:hover {
+        border-color: #007bff;
+        transform: scale(1.03);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .product-name {
+        font-size: 11px;
+        font-weight: bold;
+        margin-bottom: 6px;
+        height: 32px;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        line-height: 1.2;
+    }
+    .product-price {
+        font-size: 14px;
+        color: #28a745;
+        font-weight: bold;
+    }
+    .product-stock {
+        font-size: 10px;
+        color: #666;
+        margin-top: 4px;
+    }
+    
+    /* Espaciador para la última fila */
+    .products-grid::after {
+        content: '';
+        height: 20px;
+    }
+    
+    /* Columna 2: 35% Venta */
+    .sale-section {
+        width: 35%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .sale-items-panel {
+        flex: 1.5;
+        background: #fff;
+        border-radius: 10px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        overflow: hidden;
+        min-height: 250px;
+    }
+    
+    .sale-data-panel {
+        flex: 0;
+        background: #fff;
+        border-radius: 10px;
+        padding: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        min-height: 280px;
+        max-height: 350px;
+        overflow-y: auto;
+    }
+    
+    .panel-title {
+        font-weight: bold;
+        font-size: 15px;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #eee;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .sale-items-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+    
+    .sale-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 6px;
+    }
+    .sale-item-info { flex: 1; }
+    .sale-item-name { font-weight: bold; font-size: 13px; }
+    .sale-item-price { font-size: 12px; color: #666; }
+    .sale-item-actions { display: flex; align-items: center; gap: 6px; }
+    .qty-btn {
+        width: 26px;
+        height: 26px;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .qty-minus { background: #dc3545; color: white; }
+    .qty-plus { background: #28a745; color: white; }
+    .sale-item-qty { font-weight: bold; min-width: 25px; text-align: center; font-size: 13px; }
+    .remove-item { color: #dc3545; cursor: pointer; margin-left: 5px; }
+    .remove-item:hover { color: #c82333; }
+    
+    .empty-sale { text-align: center; color: #999; padding: 30px; }
+    .empty-sale i { font-size: 40px; margin-bottom: 10px; }
+    
+    .customer-dropdown {
+        position: absolute;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        max-height: 250px;
+        overflow-y: auto;
+        z-index: 1000;
+        width: calc(100% - 30px);
+    }
+    .customer-option {
+        padding: 10px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+    .customer-option:hover { background: #f8f9fa; }
+    .customer-option:last-child { border-bottom: none; }
+    .customer-option-name { font-weight: bold; font-size: 13px; }
+    .customer-option-doc { font-size: 11px; color: #666; }
+    
+    .sale-totals {
+        border-top: 2px solid #007bff;
+        padding-top: 10px;
+        margin: 12px 0;
+    }
+    .sale-total-row { 
+        display: flex; 
+        justify-content: space-between; 
+        padding: 4px 0; 
+        font-size: 13px; 
+    }
+    .sale-total-row.grand-total {
+        font-size: 20px;
+        font-weight: bold;
+        color: #007bff;
+        border-top: 2px solid #ddd;
+        padding-top: 10px;
+        margin-top: 8px;
+    }
+    
+    .btn-pay {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        border: none;
+        padding: 15px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    .btn-pay:hover {
+        transform: scale(1.02);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+    }
+    .btn-pay:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+    
+    .btn-cancel {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 10px;
+        font-size: 13px;
+        border-radius: 8px;
+        cursor: pointer;
+        flex: 0 0 auto;
+    }
+    
+    .tabs-bar {
+        display: flex; gap: 5px; overflow-x: auto; padding: 6px 8px 0;
+        background: #f5f5f5; border-bottom: 2px solid #ddd;
+        flex-shrink: 0; min-height: 44px; align-items: flex-end;
+    }
+    .tab-item {
+        display: flex; gap: 6px; align-items: center;
+        padding: 6px 10px; background: #e9e9e9; border-radius: 8px 8px 0 0;
+        cursor: pointer; font-size: 12px; white-space: nowrap;
+        border: 1px solid #ddd; border-bottom: none; min-width: 90px;
+    }
+    .tab-item.active {
+        background: #fff; font-weight: bold; border-color: #4e73df;
+        border-bottom: 2px solid #fff; margin-bottom: -1px;
+    }
+    .tab-item-name { max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+    .tab-item-total { color: #28a745; font-weight: bold; }
+    .tab-item-close { color: #dc3545; cursor: pointer; font-weight: bold; font-size: 14px; padding: 0 2px; }
+    .tab-item-close:hover { color: #a71d2a; }
+    .tab-add {
+        background: #28a745; color: white; border: none; padding: 6px 12px;
+        border-radius: 8px 8px 0 0; cursor: pointer; font-size: 12px;
+        white-space: nowrap; font-weight: bold;
+    }
+    .tab-add:hover { background: #218838; }
+</style>
+@endpush
+
+@section('content')
+<div class="pos-container">
+    <div class="categories-section">
+        <div class="categories-header">
+            <h5 class="panel-title" style="margin:0;"><i class="fas fa-th-large"></i> Seleccionar Categoria</h5>
+        </div>
+
+        <div style="padding:8px 12px;">
+            <div style="position:relative;">
+                <i class="fas fa-search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#999; font-size:13px;"></i>
+                <input type="text" id="posSearch" placeholder="Buscar producto por nombre o código de barras..." oninput="searchPOSProducts(this.value)" style="width:100%; padding:7px 10px 7px 30px; border:1px solid #ddd; border-radius:6px; font-size:13px; outline:none; box-sizing:border-box;">
+            </div>
+        </div>
+        
+        <div class="categories-grid" id="categoriesGrid">
+            @foreach($categories as $category)
+            <div class="category-card" style="border-color: {{ $category->color ?? '#007bff' }};"
+                 onclick="showProducts({{ $category->id }}, '{{ $category->nombre }}')">
+                <i class="{{ $category->icon ?? 'fas fa-tag' }}" style="color: {{ $category->color ?? '#007bff' }};"></i>
+                <h5 style="color: #333;">{{ $category->nombre }}</h5>
+                <small>{{ $category->products_count ?? 0 }} productos</small>
+            </div>
+            @endforeach
+        </div>
+        
+        <div class="products-section" id="productsSection">
+            <div class="products-header">
+                <button class="btn btn-sm btn-secondary" onclick="backToCategories()">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </button>
+                <span class="ml-3 font-weight-bold" id="categoryTitle"></span>
+            </div>
+            <div class="products-grid" id="productsGrid"></div>
+        </div>
+    </div>
+    
+    <div class="sale-section">
+        <div class="tabs-bar" id="tabsBar">
+            <button id="btnAddTab" class="tab-add" onclick="addNewTab()" title="Nueva venta">+ Nueva Venta</button>
+        </div>
+        <div class="sale-items-panel">
+            <div class="panel-title"><i class="fas fa-shopping-cart"></i> Productos</div>
+            <div class="sale-items-list" id="saleItems">
+                <div class="empty-sale">
+                    <i class="fas fa-shopping-basket"></i>
+                    <p>Agrega productos</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sale-data-panel">
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <div style="flex: 1; position: relative;">
+                    <label><i class="fas fa-user"></i> Cliente</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="customerSearch" class="form-control form-control-sm" placeholder="Buscar..." autocomplete="off" style="flex: 1;">
+                        <button type="button" class="btn btn-sm btn-success" onclick="openCustomerModal()" title="Nuevo cliente" style="padding: 4px 10px;">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" id="customerId" value="">
+                    <div id="customerDropdown" class="customer-dropdown" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <div style="flex: 1;">
+                    <label>Tipo Documento</label>
+                    <select id="documentType" class="form-control form-control-sm" onchange="updateSerieByType()">
+                        <option value="03">BOLETA</option>
+                        <option value="01">FACTURA</option>
+                        <option value="NV">NOTA DE VENTA</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label>Serie</label>
+                    <input type="text" id="serieDisplay" class="form-control form-control-sm" readonly disabled>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <div style="flex: 1;">
+                    <label>Metodo de Pago</label>
+                    <select id="paymentMethod" class="form-control form-control-sm">
+                        <option value="EFECTIVO">EFECTIVO</option>
+                        <option value="TARJETA">TARJETA</option>
+                        <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+                        <option value="YAPE">YAPE</option>
+                        <option value="PLIN">PLIN</option>
+                        <option value="MIXTO">MIXTO</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label>Referencia</label>
+                    <input type="text" id="reference" class="form-control form-control-sm" placeholder="N° operacion">
+                </div>
+            </div>
+            
+            <div class="sale-totals">
+                <div class="sale-total-row">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">S/ 0.00</span>
+                </div>
+                <div class="sale-total-row">
+                    <span>IGV ({{ $mainCompany->getActiveIgvPercent() }}%):</span>
+                    <span id="igv">S/ 0.00</span>
+                </div>
+                <div class="sale-total-row grand-total">
+                    <span>TOTAL:</span>
+                    <span id="total">S/ 0.00</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <button class="btn-cancel" onclick="openCashDrawer()" title="Abrir cajón de efectivo" style="flex: 0 0 auto; padding: 10px 16px;">
+                    <i class="fas fa-cash-register"></i>
+                </button>
+                <button class="btn-cancel" onclick="cancelSale()" style="flex: 0 0 100px;">
+                    <i class="fas fa-trash"></i> Cancelar
+                </button>
+                <button class="btn-pay" id="btnPay" onclick="processSale()" disabled style="flex: 1;">
+                    <i class="fas fa-credit-card"></i> COBRAR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="saleForm" method="POST" action="{{ route('pos.store') }}" style="display: none;">
+    @csrf
+    <input type="hidden" name="customer_id" id="customerIdInput">
+    <input type="hidden" name="document_type" id="documentTypeInput">
+    <input type="hidden" name="payment_method" id="paymentMethodInput">
+    <input type="hidden" name="reference" id="referenceInput">
+    <input type="hidden" name="items_json" id="itemsJson">
+    <input type="hidden" name="total" id="totalInput">
+</form>
+
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Venta Procesada</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body text-center">
+                <h4 id="invoiceNumberSuccess"></h4>
+                <h3>Total: <span id="saleTotalSuccess"></span></h3>
+                <input type="hidden" id="lastInvoiceId" value="">
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-primary" onclick="sendToSunat()">
+                    <i class="fas fa-paper-plane"></i> Enviar a SUNAT
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="printInvoice('A4')">
+                    <i class="fas fa-file-alt"></i> A4
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="printInvoice('80mm')">
+                    <i class="fas fa-receipt"></i> 80mm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="errorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Error</h5>
+            </div>
+            <div class="modal-body text-center">
+                <p id="errorMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="customerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-user-plus"></i> Nuevo Cliente</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0; height: 500px;">
+                <iframe id="customerFrame" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+const igvPercent = {{ $mainCompany->getActiveIgvPercent() }};
+const productsData = @json($products->where('estado', 'ACTIVO'));
+const categoriesData = @json($categories);
+const customersData = @json($customers);
+const seriesData = @json($series);
+
+// === MULTI-TAB SYSTEM ===
+let saleTabs = [];
+let activeTabId = null;
+let nextTabId = 1;
+
+const STORAGE_KEY = 'pos_tabs';
+const STORAGE_ACTIVE = 'pos_activeTab';
+const STORAGE_NEXTID = 'pos_nextTabId';
+
+function saveTabsToStorage() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saleTabs));
+    localStorage.setItem(STORAGE_ACTIVE, activeTabId);
+    localStorage.setItem(STORAGE_NEXTID, nextTabId);
+}
+
+function loadTabsFromStorage() {
+    try {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        saleTabs = saved ? JSON.parse(saved) : [];
+        activeTabId = parseInt(localStorage.getItem(STORAGE_ACTIVE)) || null;
+        nextTabId = parseInt(localStorage.getItem(STORAGE_NEXTID)) || 1;
+    } catch(e) {
+        saleTabs = []; activeTabId = null; nextTabId = 1;
+    }
+}
+
+function getActiveTab() {
+    return saleTabs.find(function(t) { return t.id === activeTabId; });
+}
+
+function addNewTab() {
+    var tab = {
+        id: nextTabId,
+        name: 'Venta ' + nextTabId,
+        items: [],
+        customerId: null,
+        customerName: '',
+        documentType: 'NV',
+        paymentMethod: 'EFECTIVO',
+        createdAt: new Date().toISOString()
+    };
+    nextTabId++;
+    saleTabs.push(tab);
+    switchToTab(tab.id);
+    saveTabsToStorage();
+}
+
+function switchToTab(tabId) {
+    // Save current tab's state from inputs
+    if (activeTabId) {
+        var cur = getActiveTab();
+        if (cur) {
+            cur.customerId = document.getElementById('customerId').value || null;
+            cur.customerName = document.getElementById('customerSearch').value || '';
+            cur.documentType = document.getElementById('documentType').value;
+            cur.paymentMethod = document.getElementById('paymentMethod').value;
+        }
+    }
+    activeTabId = tabId;
+    var tab = getActiveTab();
+    if (!tab) return;
+    
+    // Restore tab state to inputs
+    document.getElementById('customerId').value = tab.customerId || '';
+    document.getElementById('customerSearch').value = tab.customerName || '';
+    document.getElementById('documentType').value = tab.documentType || 'NV';
+    document.getElementById('paymentMethod').value = tab.paymentMethod || 'EFECTIVO';
+    updateSerieByType();
+    
+    renderTabs();
+    renderSaleItems();
+    saveTabsToStorage();
+}
+
+function closeTab(tabId) {
+    var tab = saleTabs.find(function(t) { return t.id === tabId; });
+    if (!tab) return;
+    if (tab.items.length > 0 && !confirm('La venta ' + tab.name + ' tiene productos. Eliminarla?')) return;
+    
+    saleTabs = saleTabs.filter(function(t) { return t.id !== tabId; });
+    
+    if (activeTabId === tabId) {
+        if (saleTabs.length > 0) {
+            switchToTab(saleTabs[saleTabs.length - 1].id);
+        } else {
+            activeTabId = null;
+            document.getElementById('customerId').value = '';
+            document.getElementById('customerSearch').value = '';
+            document.getElementById('documentType').value = 'NV';
+            document.getElementById('paymentMethod').value = 'EFECTIVO';
+            updateSerieByType();
+            renderTabs();
+            renderSaleItems();
+        }
+    } else {
+        renderTabs();
+    }
+    saveTabsToStorage();
+}
+
+function renderTabs() {
+    var bar = document.getElementById('tabsBar');
+    var html = '';
+    saleTabs.forEach(function(tab) {
+        var total = tab.items.reduce(function(s, i) { return s + (i.price * i.quantity); }, 0);
+        var activeClass = tab.id === activeTabId ? ' active' : '';
+        html += '<div class="tab-item' + activeClass + '" onclick="switchToTab(' + tab.id + ')" title="' + tab.name + '">'
+            + '<span class="tab-item-name">' + tab.name + '</span>'
+            + '<span class="tab-item-total">S/ ' + total.toFixed(2) + '</span>'
+            + '<span class="tab-item-close" onclick="event.stopPropagation();closeTab(' + tab.id + ')">x</span>'
+            + '</div>';
+    });
+    html += '<button id="btnAddTab" class="tab-add" onclick="addNewTab()" title="Nueva venta">+ Venta</button>';
+    bar.innerHTML = html;
+}
+
+// === SALE FUNCTIONS (operate on active tab) ===
+function addToSale(productId) {
+    if (!activeTabId) { addNewTab(); }
+    var tab = getActiveTab();
+    if (!tab) return;
+    
+    const product = productsData.find(p => p.id === productId);
+    if (!product) return;
+    
+    if (!product.is_composite && product.stock <= 0) {
+        showError('Sin stock');
+        return;
+    }
+    
+    const existingItem = tab.items.find(item => item.id === productId);
+    if (existingItem) {
+        if (product.is_composite || existingItem.quantity < product.stock) {
+            existingItem.quantity++;
+        } else {
+            showError('Stock insuficiente');
+            return;
+        }
+    } else {
+        tab.items.push({
+            id: product.id,
+            name: product.descripcion,
+            price: parseFloat(product.precio),
+            quantity: 1,
+            stock: product.stock,
+            is_composite: product.is_composite || false
+        });
+    }
+    
+    renderSaleItems();
+    renderTabs();
+    saveTabsToStorage();
+}
+
+function decreaseQty(productId) {
+    var tab = getActiveTab();
+    if (!tab) return;
+    const item = tab.items.find(item => item.id === productId);
+    if (item) {
+        if (item.quantity > 1) { item.quantity--; }
+        else { tab.items = tab.items.filter(i => i.id !== productId); }
+    }
+    renderSaleItems();
+    renderTabs();
+    saveTabsToStorage();
+}
+
+function increaseQty(productId) {
+    var tab = getActiveTab();
+    if (!tab) return;
+    const item = tab.items.find(item => item.id === productId);
+    if (item && (item.is_composite || item.quantity < item.stock)) {
+        item.quantity++;
+        renderSaleItems();
+        renderTabs();
+        saveTabsToStorage();
+    }
+}
+
+function removeItem(productId) {
+    var tab = getActiveTab();
+    if (!tab) return;
+    tab.items = tab.items.filter(i => i.id !== productId);
+    renderSaleItems();
+    renderTabs();
+    saveTabsToStorage();
+}
+
+function cancelSale() {
+    var tab = getActiveTab();
+    if (!tab || tab.items.length === 0) return;
+    if (confirm('Cancelar ' + tab.name + '?')) {
+        tab.items = [];
+        tab.customerId = null;
+        tab.customerName = '';
+        document.getElementById('customerId').value = '';
+        document.getElementById('customerSearch').value = '';
+        renderSaleItems();
+        renderTabs();
+        saveTabsToStorage();
+    }
+}
+
+function renderSaleItems() {
+    const container = document.getElementById('saleItems');
+    var tab = getActiveTab();
+    
+    if (!tab || tab.items.length === 0) {
+        container.innerHTML = '<div class="empty-sale"><i class="fas fa-shopping-basket"></i><p>Agrega productos</p></div>';
+        document.getElementById('btnPay').disabled = true;
+        return;
+    }
+    
+    let html = '';
+    tab.items.forEach(item => {
+        html += '<div class="sale-item">' +
+            '<div class="sale-item-info">' +
+                '<div class="sale-item-name">' + item.name + '</div>' +
+                '<div class="sale-item-price">S/ ' + item.price.toFixed(2) + ' x ' + item.quantity + '</div>' +
+            '</div>' +
+            '<div class="sale-item-actions">' +
+                '<button class="qty-btn qty-minus" onclick="decreaseQty(' + item.id + ')">-</button>' +
+                '<span class="sale-item-qty">' + item.quantity + '</span>' +
+                '<button class="qty-btn qty-plus" onclick="increaseQty(' + item.id + ')">+</button>' +
+                '<i class="fas fa-times remove-item" onclick="removeItem(' + item.id + ')"></i>' +
+            '</div>' +
+        '</div>';
+    });
+    
+    container.innerHTML = html;
+    document.getElementById('btnPay').disabled = false;
+    calculateTotals();
+}
+
+function calculateTotals() {
+    var tab = getActiveTab();
+    if (!tab) { document.getElementById('total').textContent = 'S/ 0.00'; return; }
+    
+    let total = 0;
+    tab.items.forEach(item => { total += item.price * item.quantity; });
+    
+    const base = total / (1 + igvPercent / 100);
+    const igv = total - base;
+    
+    document.getElementById('subtotal').textContent = 'S/ ' + base.toFixed(2);
+    document.getElementById('igv').textContent = 'S/ ' + igv.toFixed(2);
+    document.getElementById('total').textContent = 'S/ ' + total.toFixed(2);
+}
+
+function getTotal() {
+    var tab = getActiveTab();
+    if (!tab) return 0;
+    let total = 0;
+    tab.items.forEach(item => { total += item.price * item.quantity; });
+    return total;
+}
+
+function processSale() {
+    var tab = getActiveTab();
+    if (!tab || tab.items.length === 0) {
+        showError('No hay productos en esta venta');
+        return;
+    }
+    
+    document.getElementById('customerIdInput').value = document.getElementById('customerId').value;
+    document.getElementById('documentTypeInput').value = document.getElementById('documentType').value;
+    document.getElementById('paymentMethodInput').value = document.getElementById('paymentMethod').value;
+    document.getElementById('referenceInput').value = document.getElementById('reference').value;
+    document.getElementById('itemsJson').value = JSON.stringify(tab.items);
+    document.getElementById('totalInput').value = getTotal();
+    
+    document.getElementById('saleForm').submit();
+}
+
+// === CUSTOMER, SERIE ===
+function selectCustomer(id, nombre) {
+    document.getElementById('customerId').value = id;
+    document.getElementById('customerSearch').value = nombre;
+    document.getElementById('customerDropdown').style.display = 'none';
+    var tab = getActiveTab();
+    if (tab) { tab.customerId = id; tab.customerName = nombre; saveTabsToStorage(); }
+}
+
+function searchCustomers(term) {
+    if (term.length < 2) { document.getElementById('customerDropdown').style.display = 'none'; return; }
+    const termLower = term.toLowerCase();
+    const results = customersData.filter(c => (c.nombre && c.nombre.toLowerCase().includes(termLower)) || (c.documento_numero && c.documento_numero.includes(term)));
+    if (results.length === 0) { document.getElementById('customerDropdown').innerHTML = '<div class="customer-option"><span class="text-muted">Sin resultados</span></div>'; document.getElementById('customerDropdown').style.display = 'block'; return; }
+    let html = '';
+    results.slice(0, 10).forEach(customer => {
+        html += '<div class="customer-option" onclick="selectCustomer(' + customer.id + ', \'' + customer.nombre.replace(/'/g, "\\'") + '\')">' +
+            '<div class="customer-option-name">' + customer.nombre + '</div>' +
+            '<div class="customer-option-doc">' + (customer.documento_tipo || '') + ': ' + (customer.documento_numero || '') + '</div></div>';
+    });
+    document.getElementById('customerDropdown').innerHTML = html;
+    document.getElementById('customerDropdown').style.display = 'block';
+}
+
+function updateSerieByType() {
+    const docType = document.getElementById('documentType').value;
+    const typePrefixes = { '01': 'F', '03': 'B', 'NV': 'NV' };
+    const prefix = typePrefixes[docType] || 'F';
+    let defaultSerie = prefix + '001';
+    if (seriesData && seriesData.length > 0) {
+        const matchingSerie = seriesData.find(s => s.tipo_documento === docType);
+        if (matchingSerie && matchingSerie.serie) defaultSerie = matchingSerie.serie;
+    }
+    document.getElementById('serieDisplay').value = defaultSerie;
+    var tab = getActiveTab();
+    if (tab) { tab.documentType = docType; saveTabsToStorage(); }
+}
+
+// === PRODUCT SEARCH ===
+function showProducts(categoryId, categoryName) {
+    document.getElementById('categoriesGrid').style.display = 'none';
+    document.getElementById('productsSection').style.display = 'flex';
+    document.getElementById('categoryTitle').textContent = categoryName;
+    const products = productsData.filter(p => p.category_id === categoryId);
+    if (products.length === 0) { document.getElementById('productsGrid').innerHTML = '<div class="empty-sale"><i class="fas fa-box-open"></i><p>Sin productos</p></div>'; return; }
+    let html = '';
+    products.forEach(product => {
+        html += '<div class="product-card" onclick="addToSale(' + product.id + ')">' +
+            '<div class="product-name">' + product.descripcion + '</div>' +
+            '<div class="product-price">S/ ' + parseFloat(product.precio).toFixed(2) + '</div>' +
+            '<div class="product-stock">Stock: ' + product.stock + '</div></div>';
+    });
+    document.getElementById('productsGrid').innerHTML = html;
+}
+
+function searchPOSProducts(query) {
+    query = query.trim();
+    var categoriesGrid = document.getElementById('categoriesGrid');
+    var productsSection = document.getElementById('productsSection');
+    var categoryTitle = document.getElementById('categoryTitle');
+    if (!query) { categoriesGrid.style.display = 'grid'; productsSection.style.display = 'none'; return; }
+    var isNumeric = /^\d+$/.test(query);
+    var q = query.toLowerCase();
+    var results = productsData.filter(function(p) {
+        if (isNumeric) return (p.codigo_barras && p.codigo_barras.includes(q)) || (p.codigo && p.codigo.toLowerCase().includes(q));
+        return p.descripcion && p.descripcion.toLowerCase().includes(q);
+    });
+    categoriesGrid.style.display = 'none'; productsSection.style.display = 'flex';
+    categoryTitle.textContent = 'Resultados: ' + results.length;
+    var grid = document.getElementById('productsGrid');
+    if (results.length === 0) { grid.innerHTML = '<div class="empty-sale"><i class="fas fa-box-open"></i><p>Sin resultados</p></div>'; return; }
+    var html = '';
+    results.forEach(function(product) {
+        html += '<div class="product-card" onclick="addToSale(' + product.id + ')">' +
+            '<div class="product-name">' + product.descripcion + '</div>' +
+            '<div class="product-price">S/ ' + parseFloat(product.precio).toFixed(2) + '</div>' +
+            '<div class="product-stock">Stock: ' + product.stock + '</div></div>';
+    });
+    grid.innerHTML = html;
+}
+
+function backToCategories() {
+    document.getElementById('categoriesGrid').style.display = 'grid';
+    document.getElementById('productsSection').style.display = 'none';
+}
+
+// === MODALS ===
+function showError(message) { document.getElementById('errorMessage').textContent = message; $('#errorModal').modal('show'); }
+
+function openCashDrawer() {
+    fetch('/pos/open-drawer', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+            'Accept': 'application/json'
+        }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(config) {
+        if (!config.success) { showError(config.message || 'Error'); return; }
+        var body = 'mode=escpos&data=' + encodeURIComponent(config.data);
+        if (config.printer) body += '&printer=' + encodeURIComponent(config.printer);
+        else if (config.ip) { body += '&ip=' + config.ip + '&port=' + config.port; }
+        fetch('http://localhost:9100/print', {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body
+        })
+        .catch(function() {});
+    })
+    .catch(function() {
+        showError('Error al obtener configuración');
+    });
+}
+
+function sendToSunat() {
+    const invoiceId = document.getElementById('lastInvoiceId').value;
+    if (!invoiceId) return;
+    fetch('/pos/sunat/' + invoiceId, { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Content-Type': 'application/json' } })
+    .then(r => r.json()).then(d => { alert(d.message || (d.success ? 'Enviado' : 'Error')); }).catch(e => { alert('Error: ' + e); });
+}
+
+function printInvoice(format) {
+    const invoiceId = document.getElementById('lastInvoiceId').value;
+    if (!invoiceId) return;
+    window.open('/pos/print/' + invoiceId + '/' + format, '_blank');
+}
+
+function openCustomerModal() {
+    document.getElementById('customerFrame').src = '/customers/create?company_id=1';
+    $('#customerModal').modal('show');
+}
+
+function onCustomerCreated(customer) {
+    customersData.push(customer);
+    $('#customerModal').modal('hide');
+    selectCustomer(customer.id, customer.nombre);
+}
+
+// === PAYMENT METHOD SAVE ===
+document.getElementById('paymentMethod').addEventListener('change', function() {
+    var tab = getActiveTab();
+    if (tab) { tab.paymentMethod = this.value; saveTabsToStorage(); }
+});
+
+// === INIT ===
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') cancelSale(); });
+
+document.getElementById('customerSearch').addEventListener('input', function(e) { searchCustomers(e.target.value); });
+document.getElementById('customerSearch').addEventListener('blur', function() { setTimeout(function() { document.getElementById('customerDropdown').style.display = 'none'; }, 200); });
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadTabsFromStorage();
+    renderTabs();
+    updateSerieByType();
+    
+    if (saleTabs.length > 0 && activeTabId && saleTabs.find(function(t) { return t.id === activeTabId; })) {
+        switchToTab(activeTabId);
+    } else if (saleTabs.length > 0) {
+        switchToTab(saleTabs[0].id);
+    } else {
+        addNewTab();
+    }
+});
+</script>
+@endpush
