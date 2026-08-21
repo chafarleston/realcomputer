@@ -1,10 +1,12 @@
-# Documentación del Sistema FacturaFácil
+# Documentación del Sistema Chatarra
+
+> **Repo independiente.** Este sistema deriva de **FacturaFácil** y conserva su infraestructura SUNAT/impresión/caja, pero es ahora un sistema autónomo (repo `realcomputer`) enfocado en la **compra/venta de chatarra y reciclaje** (POS Chatarra, multiprecio, estaciones Pesador→Cajero). Algunas secciones describen módulos heredados del restaurante que permanecen en el código.
 
 ---
 
 ## 1. Visión General
 
-**FacturaFácil** es un sistema integral de gestión comercial, facturación electrónica SUNAT (Perú) y administración de restaurante, desarrollado en **Laravel 13.x** con **MySQL** y **Node.js**.
+**Chatarra** es un sistema de compra/venta de chatarra y reciclaje — derivado de **FacturaFácil** — con facturación electrónica SUNAT (Perú), POS Chatarra, control de caja e impresión térmica, desarrollado en **Laravel 13.x** con **MySQL** y **Node.js**.
 
 ### Arquitectura General
 
@@ -1061,8 +1063,8 @@ curl "http://localhost:9100/open-drawer?ip=192.168.1.100&port=9100"
 ### 19.1 Instalación del Sistema
 
 ```bash
-git clone <repo> facturafacil
-cd facturafacil
+git clone <repo> chatarra
+cd chatarra
 composer install
 cp .env.example .env   # configurar DB
 php artisan key:generate
@@ -2142,7 +2144,7 @@ pedidos directamente, sin intervención del mozo.
 Arquitectura:
 ┌──────────────────────────────────────┐
 │  Pantalla Táctil (Entrada)           │
-│  http://facturafacil.test/autopedido │
+│  http://chatarra.test/autopedido │
 │  - Sin autenticación                 │
 │  - Interfaz touch-friendly           │
 │  - Modal de producto con:            │
@@ -3683,7 +3685,7 @@ Se realizaron pruebas automatizadas del flujo completo: abrir caja → 20 ventas
 
 ```bash
 # En la máquina del cliente
-cd facturafacil
+cd chatarra
 git pull origin main        # Obtener últimos cambios
 php artisan view:clear       # Limpiar vistas compiladas
 php artisan config:clear     # Limpiar configuración cacheada

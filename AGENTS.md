@@ -1,4 +1,6 @@
-# FacturaFácil — AGENTS.md
+# Chatarra — AGENTS.md
+
+> **Repo independiente.** Este proyecto deriva de FacturaFácil pero es ahora un sistema autónomo (repo `realcomputer`) enfocado en **compra/venta de chatarra y reciclaje** (POS Chatarra, multiprecio, estaciones Pesador→Cajero). La infraestructura SUNAT/impresión/caja se conserva de su origen. Algunas vistas pueden conservar el branding "FacturaFácil" por herencia.
 
 ## Stack
 - Laravel 13.x, PHP 8.2+, MySQL 8.0

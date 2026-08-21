@@ -1,6 +1,8 @@
-?# TRD �?" Technical Requirements Document
+# TRD — Technical Requirements Document
 
-## FacturaFácil: Especificación Técnica del Sistema
+## Chatarra: Especificación Técnica del Sistema
+
+> Sistema independiente derivado de **FacturaFácil** (repo `realcomputer`), enfocado en compra/venta de chatarra y reciclaje. Conserva la infraestructura SUNAT/impresión/caja de su origen.
 
 **Versión:** 3.0  
 **Fecha:** Agosto 2026  
@@ -941,8 +943,8 @@ php artisan migrate:status     # Ver estado
 ### 10.2 Instalación
 
 ```bash
-git clone <repo> facturafacil
-cd facturafacil
+git clone <repo> chatarra
+cd chatarra
 composer install --no-dev
 cp .env.example .env   # Configurar DB, APP_KEY
 php artisan key:generate

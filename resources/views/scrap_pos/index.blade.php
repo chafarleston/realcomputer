@@ -186,6 +186,9 @@
     .price-level-chip.active { border-color: #007bff; background: #e7f1ff; }
     .price-level-chip .pl-nivel { font-size: 11px; color: #666; }
     .price-level-chip .pl-precio { font-size: 13px; font-weight: bold; }
+
+    .modal { z-index: 20000 !important; }
+    .modal-backdrop.show { z-index: 19999 !important; }
 </style>
 @endpush
 

@@ -1,4 +1,4 @@
-# FacturaFacil Print Server (Node.js)
+# Chatarra Print Server (Node.js)
 
 Servidor REST de impresión para impresoras térmicas ESC/POS. Recibe trabajos desde el navegador o el servidor Laravel y los envía a impresoras locales (USB/paralelo) o de red (socket TCP).
 
