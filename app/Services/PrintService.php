@@ -103,6 +103,19 @@ class PrintService
         $this->processQueue();
     }
 
+    public function printScrapInvoice($invoice): void
+    {
+        $printer = $this->getPrinter('caja');
+        if (!$printer) {
+            \Log::warning('No hay impresora configurada para caja');
+            return;
+        }
+        $width = PlainTextTicket::widthForPaper($printer->paper_size);
+        $data = PlainTextTicket::invoiceThermalTicket($invoice, 'escpos', $width);
+        $this->queuePrint($printer, $data, 'invoice', get_class($invoice), $invoice->id);
+        $this->processQueue();
+    }
+
     public function printCancelNotificationGrouped($order, $items): void
     {
         $groups = ['productos' => []];

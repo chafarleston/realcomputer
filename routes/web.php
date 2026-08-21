@@ -198,6 +198,7 @@ Route::get('/customers/search', [CustomerApiController::class, 'search'])->name(
     Route::post('/scrap-pos/orders/{order}/charge', [ScrapPosController::class, 'chargeOrder'])->name('scrap-pos.charge');
     Route::get('/scrap-pos/{mode}/stations', [ScrapPosController::class, 'stations'])->name('scrap-pos.stations');
     Route::get('/scrap-pos/print/{invoice}/{format?}', [ScrapPosController::class, 'printCompra'])->name('scrap-pos.printCompra');
+    Route::post('/scrap-pos/print/{invoice}/thermal', [ScrapPosController::class, 'printThermal'])->name('scrap-pos.printThermal');
 
     // Restaurant Routes
     Route::get('/restaurant', [RestaurantController::class, 'index'])->name('restaurant.index');

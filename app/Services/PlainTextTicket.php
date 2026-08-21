@@ -389,4 +389,50 @@ class PlainTextTicket
         $t->center('Firma / Conforme');
         return $format === 'escpos' ? $t->getEscPos() : $t->getText();
     }
+
+    public static function invoiceThermalTicket($invoice, string $format = 'escpos', int $width = 48): string
+    {
+        $company = \App\Models\Company::find($invoice->company_id);
+        $t = new self($format, $width);
+        $t->center('*** ' . self::invoiceThermalTitle($invoice) . ' ***', '*');
+        $t->blank();
+        if ($company) {
+            $t->center($company->nombre_comercial ?? $company->razon_social);
+            $t->center('RUC: ' . $company->ruc);
+        }
+        $t->text('Nro: ' . $invoice->full_number);
+        $t->text('Fecha: ' . date('d/m/Y', strtotime($invoice->fecha_emision)) . ' ' . (isset($invoice->hora_emision) ? substr($invoice->hora_emision, 0, 5) : ''));
+        $customer = $invoice->customer;
+        $custName = $customer ? $customer->nombre : 'CLIENTES VARIOS';
+        $t->text('Cliente: ' . $custName);
+        if (!empty($invoice->referencia_pago)) $t->text('Ref: ' . $invoice->referencia_pago);
+        $t->separator();
+        $t->itemLine('CANT.', 'PRODUCTO', 'IMPORTE');
+        foreach ($invoice->items as $item) {
+            $qty = number_format((float) $item->cantidad, (float) $item->cantidad == intval($item->cantidad) ? 0 : 3);
+            $t->itemLine($qty, $item->descripcion, 'S/ ' . number_format((float) $item->precio_venta, 2));
+        }
+        $t->separator();
+        $t->twoColumns('SUBTOTAL:', 'S/ ' . number_format((float) $invoice->subtotal, 2));
+        $igvPercent = $company ? $company->getActiveIgvPercent() : 18;
+        $t->twoColumns('IGV (' . $igvPercent . '%):', 'S/ ' . number_format((float) $invoice->igv, 2));
+        $t->twoColumns('TOTAL:', 'S/ ' . number_format((float) $invoice->total, 2));
+        if (!empty($invoice->metodo_pago)) {
+            $t->text('Pago: ' . $invoice->metodo_pago);
+        }
+        $t->blank();
+        $t->center('Firma / Conforme');
+        return $format === 'escpos' ? $t->getEscPos() : $t->getText();
+    }
+
+    protected static function invoiceThermalTitle($invoice): string
+    {
+        return match ($invoice->tipo_documento) {
+            'CO' => 'NOTA DE COMPRA',
+            'NV' => 'NOTA DE VENTA',
+            '01' => 'FACTURA',
+            '03' => 'BOLETA',
+            default => 'DOCUMENTO',
+        };
+    }
 }

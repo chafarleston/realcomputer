@@ -817,12 +817,29 @@
 
     function printCompra(invoiceId, format) {
         if (!invoiceId) return;
+        if (format === '80mm') {
+            printThermal(invoiceId);
+            return;
+        }
         window.open(BASE + '/scrap-pos/print/' + invoiceId + '/' + format, '_blank');
     }
 
     function printVenta(invoiceId, format) {
         if (!invoiceId) return;
+        if (format === '80mm') {
+            printThermal(invoiceId);
+            return;
+        }
         window.open(BASE + '/pos/print/' + invoiceId + '/' + format, '_blank');
+    }
+
+    function printThermal(invoiceId) {
+        fetchJson(BASE + '/scrap-pos/print/' + invoiceId + '/thermal', { method: 'POST' })
+            .then(data => {
+                if (!data.success) throw new Error(data.message);
+                showError(data.message);
+            })
+            .catch(err => showError(err.message));
     }
 
     $('#successModal').on('hidden.bs.modal', function () { location.reload(); });

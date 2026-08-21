@@ -494,6 +494,21 @@ class ScrapPosController extends Controller
         }
     }
 
+    public function printThermal(Invoice $invoice)
+    {
+        $this->authorize('permission', 'view_pos');
+
+        $invoice->load(['items', 'customer']);
+
+        try {
+            $printService = app(PrintService::class);
+            $printService->printScrapInvoice($invoice);
+            return response()->json(['success' => true, 'message' => 'Comprobante enviado a impresora Caja']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error al imprimir: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function printCompra(Invoice $invoice, string $format = '80mm')
     {
         $this->authorize('permission', 'view_pos');
