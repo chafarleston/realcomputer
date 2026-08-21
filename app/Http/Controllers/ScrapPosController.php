@@ -656,7 +656,8 @@ class ScrapPosController extends Controller
                     'PLIN' => 'compras_plin',
                     default => 'compras_otro',
                 };
-                $cajaAbierta->$paymentField = ($cajaAbierta->$paymentField ?? 0) + $payment['amount'];
+                $cobrado = min((float) ($payment['amount'] ?? 0), $total);
+                $cajaAbierta->$paymentField = ($cajaAbierta->$paymentField ?? 0) + $cobrado;
             }
         } else {
             $cajaAbierta->cantidad_ventas = ($cajaAbierta->cantidad_ventas ?? 0) + 1;
@@ -669,7 +670,8 @@ class ScrapPosController extends Controller
                     'PLIN' => 'ventas_plin',
                     default => 'ventas_otro',
                 };
-                $cajaAbierta->$paymentField = ($cajaAbierta->$paymentField ?? 0) + $payment['amount'];
+                $cobrado = min((float) ($payment['amount'] ?? 0), $total);
+                $cajaAbierta->$paymentField = ($cajaAbierta->$paymentField ?? 0) + $cobrado;
             }
         }
         $cajaAbierta->save();
