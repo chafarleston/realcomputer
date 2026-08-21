@@ -294,12 +294,8 @@ class ScrapPosController extends Controller
         if ($mode === 'venta' && $newQty > (float) $item->quantity) {
             $product = Product::find($item->product_id);
             if ($product) {
-                $inOrder = (float) $order->items()
-                    ->where('product_id', $product->id)
-                    ->where('kitchen_status', '!=', 'CANCELLED')
-                    ->sum('quantity');
                 $additional = $newQty - (float) $item->quantity;
-                $this->assertSaleStock($order, $product, $inOrder + $additional);
+                $this->assertSaleStock($order, $product, (float) $additional);
             }
         }
 
