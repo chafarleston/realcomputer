@@ -14,6 +14,7 @@ use App\Models\RestaurantOrderItem;
 use App\Models\RestaurantTable;
 use App\Models\Serie;
 use App\Services\PrintService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -495,6 +496,38 @@ class ScrapPosController extends Controller
                 'line' => $e->getLine(),
             ], 500);
         }
+    }
+
+    public function printCompra(Invoice $invoice, string $format = '80mm')
+    {
+        $this->authorize('permission', 'view_pos');
+
+        $invoice->load(['items', 'customer']);
+        $company = \App\Models\Company::getMainCompany();
+
+        if (!$company) {
+            abort(400, 'No hay empresa principal configurada');
+        }
+
+        $view = $format === 'A4' ? 'scrap_pos.compra-a4' : 'scrap_pos.ticket-compra';
+
+        if ($format === 'A4') {
+            $pdf = Pdf::loadView($view, compact('invoice', 'company'))
+                ->setPaper('a4', 'portrait');
+            return response($pdf->output(), 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="nota-compra-' . $invoice->full_number . '.pdf"');
+        }
+
+        $pdf = Pdf::loadView($view, compact('invoice', 'company'))
+            ->setPaper([0, 0, 226.77, 800], 'portrait')
+            ->setOption('margin-top', 2)
+            ->setOption('margin-right', 2)
+            ->setOption('margin-bottom', 2)
+            ->setOption('margin-left', 2);
+        return response($pdf->output(), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="nota-compra-' . $invoice->full_number . '.pdf"');
     }
 
     private function createInvoiceFromItems($order, $items, $customerId, $documentType, $payments, $reference, $cajaAbierta, $mainCompany, $companyId, $mode)

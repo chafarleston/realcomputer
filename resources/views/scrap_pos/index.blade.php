@@ -443,6 +443,23 @@
                 <i class="fas fa-check-circle text-success" style="font-size:48px;"></i>
                 <h4 id="successNumber" class="mt-2"></h4>
                 <p id="successTotal"></p>
+                <div class="btn-group-vertical w-100 mt-3">
+                    @if($mode === 'compra')
+                        <button class="btn btn-primary btn-block" id="btnPrintCompra80" onclick="printCompra(getLastInvoiceId(), '80mm')" disabled>
+                            <i class="fas fa-print"></i> Imprimir Nota de Compra (80mm)
+                        </button>
+                        <button class="btn btn-outline-primary btn-block" id="btnPrintCompraA4" onclick="printCompra(getLastInvoiceId(), 'A4')" disabled>
+                            <i class="fas fa-file-alt"></i> Imprimir Nota de Compra (A4)
+                        </button>
+                    @else
+                        <button class="btn btn-primary btn-block" id="btnPrintVenta80" onclick="printVenta(getLastInvoiceId(), '80mm')" disabled>
+                            <i class="fas fa-print"></i> Imprimir (80mm)
+                        </button>
+                        <button class="btn btn-outline-primary btn-block" id="btnPrintVentaA4" onclick="printVenta(getLastInvoiceId(), 'A4')" disabled>
+                            <i class="fas fa-file-alt"></i> Imprimir (A4)
+                        </button>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
@@ -460,6 +477,9 @@
     let currentSeller = '';
     let selectedProduct = null;
     let selectedPriceLevel = 1;
+    let lastInvoiceId = null;
+
+    function getLastInvoiceId() { return lastInvoiceId; }
 
     function fetchJson(url, options = {}) {
         options.headers = Object.assign({
@@ -781,13 +801,28 @@
             .then(data => {
                 if (!data.success) throw new Error(data.message);
                 $('#chargeModal').modal('hide');
+                lastInvoiceId = data.invoice_id;
                 $('#successNumber').text(data.full_number);
                 $('#successTotal').text('S/ ' + Number(data.total).toFixed(2));
+                $('#btnPrintCompra80').attr('disabled', false);
+                $('#btnPrintCompraA4').attr('disabled', false);
+                $('#btnPrintVenta80').attr('disabled', false);
+                $('#btnPrintVentaA4').attr('disabled', false);
                 $('#successModal').modal('show');
                 currentOrderId = null;
                 $('#orderModal').removeClass('show');
             })
             .catch(err => showError(err.message));
+    }
+
+    function printCompra(invoiceId, format) {
+        if (!invoiceId) return;
+        window.open(BASE + '/scrap-pos/print/' + invoiceId + '/' + format, '_blank');
+    }
+
+    function printVenta(invoiceId, format) {
+        if (!invoiceId) return;
+        window.open(BASE + '/pos/print/' + invoiceId + '/' + format, '_blank');
     }
 
     $('#successModal').on('hidden.bs.modal', function () { location.reload(); });

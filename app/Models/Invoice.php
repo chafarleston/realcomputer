@@ -60,7 +60,7 @@ class Invoice extends Model
             '07' => 'Nota de Crédito',
             '08' => 'Nota de Débito',
             'NV' => 'Nota de Venta',
-            'CO' => 'Compra',
+            'CO' => 'Nota de Compra',
         ];
         return $types[$this->tipo_documento] ?? $this->tipo_documento;
     }
