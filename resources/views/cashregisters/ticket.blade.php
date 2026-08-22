@@ -46,6 +46,10 @@
         <div class="bold">TOTAL: {{ $facturas->count() + $boletas->count() + $nvs->count() }} und</div>
         <div class="bold">S/ {{ number_format($calcTotal, 2) }}</div>
     </div>
+    <div class="border-top py-1 mt-1">
+        <div class="bold">Notas Compra (CO): {{ count($compras) }} und</div>
+        <div class="bold">S/ {{ number_format(collect($compras)->sum('total'), 2) }}</div>
+    </div>
 
     <div class="border-top py-1 mt-1 mb-1 bold">POR MÉTODO PAGO</div>
     @php

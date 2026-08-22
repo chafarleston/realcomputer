@@ -88,7 +88,7 @@ class ReportController extends Controller
             ->when($tipo === 'compra', fn ($q) => $q->where('invoices.tipo_documento', 'CO'))
             ->select(
                 'invoices.id',
-                'invoices.full_number',
+                \Illuminate\Support\Facades\DB::raw("CONCAT(invoices.serie, '-', LPAD(invoices.numero, 8, '0')) as full_number"),
                 'invoices.tipo_documento',
                 'invoices.fecha_emision',
                 'invoices.hora_emision',

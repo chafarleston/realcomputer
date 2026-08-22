@@ -77,6 +77,11 @@
             <td class="text-right">{{ $facturas->count() + $boletas->count() + $nvs->count() }}</td>
             <td class="text-right">S/ {{ number_format($cashregister->total_ventas, 2) }}</td>
         </tr>
+        <tr>
+            <td>Notas de Compra (CO):</td>
+            <td class="text-right">{{ count($compras) }}</td>
+            <td class="text-right text-danger">S/ {{ number_format(collect($compras)->sum('total'), 2) }}</td>
+        </tr>
     </table>
 
     <div class="border-top py-2 mt-2 mb-1 bold">RESUMEN POR MÉTODO DE PAGO</div>

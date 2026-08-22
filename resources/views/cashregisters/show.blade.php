@@ -73,7 +73,7 @@
 
 <h4 class="mt-4">Resumen por Tipo de Documento</h4>
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card card-primary">
             <div class="card-header">
                 <h5 class="card-title">Facturas</h5>
@@ -85,7 +85,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card card-info">
             <div class="card-header">
                 <h5 class="card-title">Boletas</h5>
@@ -97,7 +97,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card card-warning">
             <div class="card-header">
                 <h5 class="card-title">Notas de Venta</h5>
@@ -111,10 +111,13 @@
     </div>
     <div class="col-md-3">
         <div class="card card-dark">
-            <div class="card-header"><h5>Pedidos Kiosko</h5></div>
-            <div class="card-body">
-                <h5>{{ $kioskoCount ?? 0 }} pedidos</h5>
-                <h4 class="text-warning">S/ {{ number_format($kioskoTotal ?? 0, 2) }}</h4>
+            <div class="card-header">
+                <h5 class="card-title">Notas de Compra</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-dark">{{ count($compras) }}</h2>
+                <p>compras</p>
+                <h4 class="text-danger">S/ {{ number_format(collect($compras)->sum('total'), 2) }}</h4>
             </div>
         </div>
     </div>

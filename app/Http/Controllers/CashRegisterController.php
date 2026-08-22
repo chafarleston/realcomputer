@@ -116,24 +116,12 @@ class CashRegisterController extends Controller
 
         $openTables = RestaurantOrder::where('company_id', $companyId)
             ->whereNotIn('status', ['COMPLETED', 'CANCELLED'])
-            ->where('order_type', '!=', 'kiosko')
             ->count();
 
-        $openKiosko = RestaurantOrder::where('company_id', $companyId)
-            ->whereNotIn('status', ['COMPLETED', 'CANCELLED'])
-            ->where('order_type', 'kiosko')
-            ->count();
-
-        if ($openTables > 0 || $openKiosko > 0) {
-            $mensaje = 'No se puede cerrar caja: ';
-            $partes = [];
-            if ($openTables > 0) {
-                $partes[] = "{$openTables} mesa(s)/estación(es) con operaciones abiertas";
-            }
-            if ($openKiosko > 0) {
-                $partes[] = "{$openKiosko} pedido(s) de kiosko pendientes";
-            }
-            $mensaje .= implode(' y ', $partes) . '. Cierre o registre todos los pedidos antes de cerrar caja.';
+        if ($openTables > 0) {
+            $mensaje = 'No se puede cerrar caja: ' . $openTables
+                . ' mesa(s)/estación(es) con operaciones abiertas'
+                . '. Cierre o registre todos los pedidos antes de cerrar caja.';
             return back()->with('error', $mensaje);
         }
 
@@ -161,14 +149,8 @@ class CashRegisterController extends Controller
         $boletasTotal = 0;
         $nvs = 0;
         $nvsTotal = 0;
-        $kioskoTotal = 0;
-        $kioskoCount = 0;
 
         foreach ($ventas as $v) {
-            if (($v->order_source ?? '') === 'kiosko') {
-                $kioskoTotal += $v->total;
-                $kioskoCount++;
-            }
             if ($v->tipo_documento === '01') {
                 $facturas++;
                 $facturasTotal += $v->total;
@@ -309,10 +291,6 @@ class CashRegisterController extends Controller
             }
         }
         $totalMetodos = $ventasEfectivo + $ventasTarjeta + $ventasYape + $ventasPlin + $ventasOtro;
-        
-        $kioskoVentas = $ventas->where('order_source', 'kiosko');
-        $kioskoTotal = $kioskoVentas->sum('total');
-        $kioskoCount = $kioskoVentas->count();
 
         $comprasBuckets = $this->paymentBuckets($compras);
 
@@ -320,7 +298,7 @@ class CashRegisterController extends Controller
             'cashregister', 'facturas', 'boletas', 'nvs', 'ventas',
             'categoriasVentas', 'productosVendidos',
             'ventasEfectivo', 'ventasTarjeta', 'ventasYape', 'ventasPlin', 'ventasOtro',
-            'totalMetodos', 'lineasEliminadas', 'kioskoTotal', 'kioskoCount',
+            'totalMetodos', 'lineasEliminadas',
             'compras', 'comprasBuckets', 'movimientos', 'ingresos', 'gastos', 'saldo'
         ));
     }
