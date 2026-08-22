@@ -129,9 +129,9 @@ FacturaFácil es un sistema integral para **chatarrerías peruanas** (y compatib
 | CAJ-11 | Imprimir resumen directo en impresora térmica Caja | P1 | ✅ |
 | CAJ-12 | Mensaje de cierre específico: mesas abiertas vs pedidos kiosko | P2 | ✅ |
 | CAJ-13 | Sistema mono-empresa (siempre usa empresa principal) | P0 | ✅ |
-| CAJ-14 | **Flujo de Caja del Día**: `saldo = apertura + ventas + ingresos − compras − gastos` + Sobrante/Faltante | P0 | ✅ |
+| CAJ-14 | **Flujo de Caja del Día**: `saldo = apertura + ventas + ingresos − compras − gastos` | P0 | ✅ |
 | CAJ-15 | **Saldo en vivo** de la caja abierta (apertura + ventas − compras + ingresos − gastos) | P0 | ✅ |
-| CAJ-16 | `monto_cierre` opcional (si se omite = saldo resultante automático) | P0 | ✅ |
+| CAJ-16 | `monto_cierre` **automático** al cerrar (diferencia entre ingresos y egresos; el usuario NO ingresa monto) | P0 | ✅ |
 
 ### 3.6 Productos
 
@@ -241,6 +241,7 @@ FacturaFácil es un sistema integral para **chatarrerías peruanas** (y compatib
 | SCR-09 | Compra genera comprobante `CO` serie `COM`, sin SUNAT; venta genera 01/03/NV | P0 | ✅ |
 | SCR-10 | Compra **debita** caja; venta **suma** a caja (por método de pago) | P0 | ✅ |
 | SCR-11 | Reimpresión de lista y precuenta | P1 | ✅ |
+| SCR-12 | Impresión post-cobro: **80mm** → slot `caja` (ESC/POS, `invoiceThermalTicket`, sin QR); **A4** → PDF (Nota de Compra / Greenter) | P0 | ✅ |
 
 ### 3.13 Ingresos y Gastos
 
@@ -371,8 +372,8 @@ FacturaFácil es un sistema integral para **chatarrerías peruanas** (y compatib
 5. Desglosa ventas y compras por método de pago
 6. Suma ingresos y gastos (cash_movements)
 7. saldo = apertura + ventas + ingresos - compras - gastos
-8. monto_cierre = input o saldo si se omite
-9. Cierra caja → resumen "Flujo de Caja del Día" + Sobrante/Faltante → opción PDF/Ticket/Imprimir
+8. monto_cierre = saldo (SIEMPRE automático, el usuario no ingresa monto)
+9. Cierra caja → resumen "Flujo de Caja del Día" → opción PDF/Ticket/Imprimir
 ```
 
 ### 5.6 Flujo de Compra de Chatarra (Pesador → Cajero)
@@ -508,4 +509,4 @@ companies (1)
 | 1.0 | Junio 2026 | Versión inicial: POS, Restaurante, KDS, Kiosko, Caja |
 | 2.0 | Julio 2026 | Productos compuestos, precio_compra, reporte inventario, POS multi-venta, fix método de pago Yape/Plin, ticket caja completo |
 | 2.1 | Agosto 2026 | **Dividir Cuenta** (paid_invoice_id + split-charge), permisos SUNAT (cajero con envío), apertura de cajón en POS (manual + automática en efectivo), IGV dinámico en precuenta, 8º slot de impresora (autopedido) |
-| 3.0 | Agosto 2026 | **Transformación a chatarrería**: POS Venta/Compra (ScrapPosController), 5 estaciones fijas por modo, multiprecio N1-N4 (también en import/export, lista y detalle de productos), flujo Pesador→Cajero (Enviar a Caja + bloqueo + polling 10s), stock conectado (compra suma, venta valida), compras CO serie COM sin SUNAT, cierre de caja contable (Flujo de Caja del Día + Sobrante/Faltante), módulo Ingresos y Gastos, menú sin Restaurante/POS original, dashboard ventas+compras, destino único `print_destination='productos'` con 3 slots de impresión |
+| 3.0 | Agosto 2026 | **Transformación a chatarrería**: POS Venta/Compra (ScrapPosController), 5 estaciones fijas por modo, multiprecio N1-N4 (también en import/export, lista y detalle de productos), flujo Pesador→Cajero (Enviar a Caja + bloqueo + polling 10s), stock conectado (compra suma, venta valida), compras CO serie COM sin SUNAT, cierre de caja contable (Flujo de Caja del Día, monto de cierre automático), módulo Ingresos y Gastos, menú sin Restaurante/POS original, dashboard ventas+compras, destino único `print_destination='productos'` con 3 slots de impresión |

@@ -394,7 +394,7 @@ processCharge() [JS]
 
 ```
 close() [PHP]
-    1. Validar: cashregister_id requerido; monto_cierre OPCIONAL (si se omite = saldo resultante)
+    1. Validar: cashregister_id requerido (el usuario NO ingresa monto)
     2. Verificar que no esté ya cerrada
     3. Verificar que no haya mesas/estaciones abiertas (restaurante + POS + kiosko)
     4. Obtener VENTAS del periodo (tipo_documento != 'CO', datetime exacto)
@@ -402,12 +402,12 @@ close() [PHP]
     6. Desglosar ventas y compras por método de pago (paymentBuckets())
     7. Sumar ingresos y gastos (cash_movements de esa caja)
     8. saldo_final = monto_apertura + ventas + ingresos - compras - gastos
-    9. monto_cierre = input del usuario, o saldo_final si lo dejó vacío
+    9. monto_cierre = saldo_final (SIEMPRE automático, no depende del input)
     10. Actualizar registro y redirigir al resumen (Flujo de Caja del Día)
 ```
 
 **Resumen de caja (show / PDF / ticket / térmico)** muestra el **Flujo de Caja del Día**:
-`1. Apertura → 2. + Ventas → 3. − Compras de Chatarra → 4. + Otros Ingresos → 5. − Gastos → = SALDO RESULTANTE`, más el **Sobrante/Faltante** comparando con el monto contado al cierre.
+`1. Apertura → 2. + Ventas → 3. − Compras de Chatarra → 4. + Otros Ingresos → 5. − Gastos → = SALDO RESULTANTE`. El **monto de cierre se calcula automáticamente** (es el saldo resultante; diferencia entre ingresos y egresos) — el usuario ya no lo ingresa en el formulario.
 
 **Caja abierta en vivo** (`CashRegisterController::index()`): al haber caja abierta se calcula el **saldo actual en tiempo real** (misma fórmula) y se muestra en la vista como "Flujo de Caja del Día".
 
@@ -448,6 +448,8 @@ close() [PHP]
 | `SummaryController` | Resúmenes diarios (listar, consultar tickets, enviar) |
 | `DocumentController` | Documentos especiales (retención, guía, percepción) |
 | `AutoPedidoController` | Kiosko de autopedidos (pantalla táctil pública) |
+| `CashMovementController` | Ingresos y Gastos (ajustan el cuadre de caja) |
+| `ReportController` | Reportes de Compras/Ventas: `/reportes` (diario/semanal/mensual, todos/categoría/varios productos, export Excel) |
 | `GreenterService` | Servicio de facturación SUNAT (no es controlador) |
 | `SummaryService` | Resumen diario de boletas (no es controlador) |
 | `SpecialDocumentService` | Documentos especiales SUNAT (no es controlador) |
@@ -483,9 +485,10 @@ printKitchenOrder($order)       // Ticket de cocina
 printPrebill($order, $key)      // Precuenta (key: precuenta)
 printScrapOrder($order, $mode)  // Lista de venta/compra (slot "productos") — comanda del POS chatarra
 printScrapPrebill($order, $mode) // Precuenta del POS chatarra (slot "precuenta")
+printScrapInvoice($invoice)     // Comprobante POS chatarra (slot "caja"): NOTA DE COMPRA/NOTA DE VENTA/FACTURA/BOLETA (ESC/POS, sin QR)
 printCancelNotification($order, $item)    // Notificación de anulación individual
 printCancelNotificationGrouped($order, $items)  // Notificación agrupada
-printInvoice($invoice)          // Factura
+printInvoice($invoice)          // Factura (stub: el ticket ESC/POS es no-op; el comprobante se imprime por PDF)
 processQueue()                  // Procesa cola de impresión
 ```
 
@@ -500,7 +503,8 @@ scrapOrderTicket($order, $mode) // Lista de venta/compra (comanda): estación, n
 cancelNotification($order, $item)           // Anulación individual
 cancelNotificationGrouped($order, $format='text', $dest='cocina')    // Anulación agrupada (incluye "Anulado por")
 invoiceTicket($invoice)         // STUB (no-op): comprobante se imprime por PDF de Greenter (generatePdf / generateTicketPdf). PrintService::printInvoice() no encola si el ticket es vacío
-cashRegisterSummary($cashregister, $data)   // Resumen de caja (Flujo de Caja del Día + Sobrante/Faltante)
+invoiceThermalTicket($invoice)  // Comprobante ESC/POS del POS chatarra (slot "caja"): título por tipo_documento (CO→NOTA DE COMPRA, NV→NOTA DE VENTA, 01→FACTURA, 03→BOLETA), kilos decimales, IGV desglosado, sin QR SUNAT
+cashRegisterSummary($cashregister, $data)   // Resumen de caja (Flujo de Caja del Día + monto de cierre automático)
 ```
 
 **Encoding**: Usa CP850 (PC850) con tabla de mapeo manual para ñ, tildes y mayúsculas acentuadas.
@@ -1315,9 +1319,9 @@ POST /cashregister/open
 ```
 POST /cashregister/close
 → close() [PHP]:
-   1. Autoriza: permiso close_cashregister
-   2. Valida: monto_cierre requerido
-   3. Verifica: caja no esté ya cerrada
+1. Autoriza: permiso close_cashregister
+    2. Valida: cashregister_id requerido (monto_cierre ya NO se pide: se calcula solo)
+    3. Verifica: caja no esté ya cerrada
    4. Verifica: no mesas abiertas en restaurante
    5. Obtiene ventas del periodo filtrando por datetime exacto:
       CONCAT(fecha_emision, ' ', hora_emision) BETWEEN apertura AND cierre
@@ -3976,6 +3980,8 @@ El sistema se adaptó para una **chatarrería** cuya actividad principal es la *
 | `chargeOrder` | Cobra SOLO operaciones enviadas; crea comprobante (venta: 01/03/NV; compra: CO serie COM); actualiza caja y stock |
 | `printList` | Reimprime la lista (comanda) |
 | `printPrecuenta` | Imprime precuenta (slot `precuenta`) |
+| `printCompra($invoice, $format)` | PDF de la Nota de Compra: `80mm` (dompdf 76mm) y `A4` |
+| `printThermal($invoice)` | POST — imprime el comprobante en el slot `caja` (ESC/POS, sin QR) vía `PrintService::printScrapInvoice()` |
 | `stations($mode)` | Endpoint de polling: estado de cada estación (**LIBRE / PESANDO / POR COBRAR**), order_id, total, vendedor |
 | `getOrder` | Devuelve la operación con items, estado y vendedor |
 
@@ -4013,6 +4019,10 @@ OPEN (PESANDO) → SENT_TO_KITCHEN (POR COBRAR) → COMPLETED (COBRADO)
 - Modal **Enviar a Caja**: campo "Cliente/Vendedor" (obligatorio) → `sendOrder` (imprime + bloquea).
 - Tras enviar: banner "ENVIADO A CAJA — PENDIENTE DE PAGO", se ocultan "+ Agregar", +/− y eliminar.
 - Modal de cobro: pre-carga referencia con el vendedor, método de pago, vuelto.
+- **Modal de éxito** tras cobrar: muestra `full_number` + total y botones de impresión:
+  - **80mm** (compra y venta) → `POST /scrap-pos/print/{id}/thermal` → **imprime automático en el slot `caja`** (ESC/POS, `invoiceThermalTicket`, sin QR; **ya no abre el PDF de Greenter**).
+  - **A4** (compra) → `/scrap-pos/print/{id}/A4` (PDF Nota de Compra); (venta) → `/pos/print/{id}/A4` (PDF Greenter con QR).
+  - Ruta thermal: `POST /scrap-pos/print/{invoice}/thermal` → `ScrapPosController::printThermal`.
 - **Polling cada 10s** (`pollStations` → `GET /scrap-pos/{mode}/stations`): actualiza la grilla en vivo; si la operación abierta ya no está activa (la cobró otro usuario), cierra el modal.
 - Selector de producto: búsqueda por nombre + filtro por categoría; en modo venta muestra **Stock disponible**.
 
@@ -4026,11 +4036,11 @@ OPEN (PESANDO) → SENT_TO_KITCHEN (POR COBRAR) → COMPLETED (COBRADO)
 
 ### 28.9 Caja — Flujo de Caja del Día
 
-- **Apertura**: monto configurable (sugerido 3000). `monto_cierre` es **opcional** al cerrar (si se omite = saldo resultante).
+- **Apertura**: monto configurable (sugerido 3000). `monto_cierre` se **calcula automáticamente** al cerrar (el cliente ya no ingresa monto; es el saldo resultante = diferencia entre ingresos y egresos).
 - **Compras debitan** y **ventas suman** al cuadre (en vivo y al cierre).
-- **Cierre contable**: `saldo_final = monto_apertura + ventas + ingresos − compras − gastos`.
-- `close()` ahora excluye las compras (CO) de las ventas y las calcula por separado (`paymentBuckets()` reutilizada para ventas y compras).
-- Resumen (show/PDF/ticket/térmico): **Flujo de Caja del Día** numerado + **Sobrante/Faltante**.
+- **Cierre contable**: `saldo_final = monto_apertura + ventas + ingresos − compras − gastos`; `monto_cierre = saldo_final` (siempre automático).
+- `close()` excluye las compras (CO) de las ventas y las calcula por separado (`paymentBuckets()` reutilizada para ventas y compras).
+- Resumen (show/PDF/ticket/térmico): **Flujo de Caja del Día** numerado + monto de cierre automático (ya no hay Sobrante/Faltante manual).
 - **Caja abierta en vivo** (`index()`): muestra el flujo del día con el saldo actual.
 
 ### 28.10 Ingresos y Gastos — `CashMovementController`

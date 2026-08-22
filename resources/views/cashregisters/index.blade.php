@@ -47,13 +47,8 @@
             <form method="POST" action="{{ route('cashregisters.close') }}" class="mt-3">
                 @csrf
                 <input type="hidden" name="cashregister_id" value="{{ $cajaAbierta->id }}">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Monto contado en caja (opcional)</label>
-                            <input type="number" name="monto_cierre" class="form-control" step="0.01" placeholder="Dejar vacío = saldo automático">
-                        </div>
-                    </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> El monto de cierre se calcula automáticamente como la diferencia entre ingresos y egresos.
                 </div>
                 @can('permission', 'close_cashregister')
                 <button type="submit" class="btn btn-danger">

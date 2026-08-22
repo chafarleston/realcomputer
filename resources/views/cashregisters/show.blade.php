@@ -287,16 +287,9 @@
                 <th>= SALDO RESULTANTE (efectivo que debe haber en caja)</th>
                 <td class="text-right" style="font-size:18px;">S/ {{ number_format($saldo, 2) }}</td>
             </tr>
-            <tr>
-                <th>Monto contado al cierre</th>
-                <td class="text-right">S/ {{ number_format($cashregister->monto_cierre ?? 0, 2) }}</td>
-            </tr>
-            <tr class="{{ (($cashregister->monto_cierre ?? 0) - $saldo) >= 0 ? 'table-success' : 'table-danger' }}">
-                <th>Sobrante / Faltante</th>
-                <td class="text-right font-weight-bold">
-                    @php $diferencia = round(($cashregister->monto_cierre ?? 0) - $saldo, 2); @endphp
-                    {{ $diferencia >= 0 ? 'Sobrante' : 'Faltante' }}: S/ {{ number_format(abs($diferencia), 2) }}
-                </td>
+            <tr class="table-info">
+                <th>Monto de cierre (calculado automáticamente)</th>
+                <td class="text-right">S/ {{ number_format($cashregister->monto_cierre ?? $saldo, 2) }}</td>
             </tr>
         </tbody>
     </table>

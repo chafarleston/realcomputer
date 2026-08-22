@@ -535,8 +535,8 @@ public function isIngreso(): bool   // tipo === 'INGRESO'
 8. paymentBuckets() desglosa ventas y compras por método de pago
 9. Ingresos/gastos = SUM(cash_movements.tipo) de la caja
 10. saldo_final = monto_apertura + ventas + ingresos - compras - gastos
-11. monto_cierre = input del usuario, o saldo_final si se omitió
-12. Actualizar cash register �?' estado CERRADA �?' resumen "Flujo de Caja del Día" + Sobrante/Faltante
+11. monto_cierre = saldo_final (SIEMPRE automático; el usuario no ingresa monto)
+12. Actualizar cash register �?' estado CERRADA �?' resumen "Flujo de Caja del Día"
 ```
 
 **`index()` (saldo en vivo):** con caja abierta calcula el mismo flujo (ventas �^' compras + ingresos �^' gastos) desde la apertura hasta ahora y lo pasa a la vista.
@@ -742,7 +742,7 @@ Genera tickets en texto plano con formato ESC/POS.
 | `cancelNotification($order, $item, ...)` | cocina/bar | Item cancelado |
 | `cancelNotificationGrouped($order, ...)` | cocina/bar | Items cancelados agrupados (incluye "Anulado por") |
 | `invoiceTicket($invoice, $format)` | caja | Stub (no-op); comprobante por PDF Greenter |
-| `cashRegisterSummary($cash, $data, ...)` | caja | Cierre completo + **Flujo de Caja del Día** + Sobrante/Faltante |
+| `cashRegisterSummary($cash, $data, ...)` | caja | Cierre completo + **Flujo de Caja del Día** + monto de cierre automático |
 
 **Encoding:** CP850 con tabla de mapeo manual para caracteres especiales (ñ, tildes).
 

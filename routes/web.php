@@ -22,6 +22,7 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ScrapPosController;
 use App\Http\Controllers\CashMovementController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ScheduleController;
@@ -146,6 +147,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/ingresos-gastos', [CashMovementController::class, 'index'])->name('cash-movements.index');
     Route::post('/ingresos-gastos', [CashMovementController::class, 'store'])->name('cash-movements.store');
     Route::delete('/ingresos-gastos/{cashMovement}', [CashMovementController::class, 'destroy'])->name('cash-movements.destroy');
+
+    // Reportes de Compras y Ventas
+    Route::get('/reportes', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reportes/export', [ReportController::class, 'export'])->name('reports.export');
     
     Route::get('/invoices/{invoice}/send', [InvoiceController::class, 'sendToSunat'])->name('invoices.send');
     Route::get('/invoices/nv', [InvoiceController::class, 'nvIndex'])->name('invoices.nv');

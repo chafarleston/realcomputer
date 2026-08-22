@@ -188,6 +188,23 @@
             </li>
             @endcan
             
+            @can('permission', 'view_invoices')
+            <li class="nav-item">
+              <a href="#" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-chart-bar"></i>
+                <p>Reportes<i class="fas fa-angle-left right"></i></p>
+              </a>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a href="{{ route('reports.index', ['tipo' => 'venta', 'periodo' => 'diario']) }}" class="nav-link {{ request()->routeIs('reports.index') && (request('tipo') ?? 'venta') === 'venta' ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Reporte de Ventas</p></a>
+                </li>
+                <li class="nav-item">
+                  <a href="{{ route('reports.index', ['tipo' => 'compra', 'periodo' => 'diario']) }}" class="nav-link {{ request()->routeIs('reports.index') && request('tipo') === 'compra' ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Reporte de Compras</p></a>
+                </li>
+              </ul>
+            </li>
+            @endcan
+
             @can('permission', 'view_cashregisters')
             <li class="nav-item">
               <a href="{{ route('cashregisters.index') }}" class="nav-link {{ request()->routeIs('cashregisters.*') ? 'active' : '' }}">

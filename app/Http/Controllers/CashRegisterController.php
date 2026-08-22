@@ -103,7 +103,6 @@ class CashRegisterController extends Controller
 
         $request->validate([
             'cashregister_id' => 'required|exists:cashregisters,id',
-            'monto_cierre' => 'nullable|numeric|min:0',
             'observaciones' => 'nullable|string|max:500',
         ]);
 
@@ -189,7 +188,7 @@ class CashRegisterController extends Controller
         $totalCompras = round($comprasBuckets['efectivo'] + $comprasBuckets['tarjeta'] + $comprasBuckets['yape'] + $comprasBuckets['plin'] + $comprasBuckets['otro'], 2);
 
         $saldoFinal = round((float) $caja->monto_apertura + $totalVentas + $ingresos - $totalCompras - $gastos, 2);
-        $montoCierre = $request->monto_cierre !== null ? $request->monto_cierre : $saldoFinal;
+        $montoCierre = $saldoFinal;
 
         $caja->update([
             'ventas_efectivo' => round($ventasBuckets['efectivo'], 2),

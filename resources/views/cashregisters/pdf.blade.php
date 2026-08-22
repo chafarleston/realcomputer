@@ -160,13 +160,8 @@
             <td class="text-right">S/ {{ number_format($saldo, 2) }}</td>
         </tr>
         <tr>
-            <td>Monto contado al cierre:</td>
-            <td class="text-right">S/ {{ number_format($cashregister->monto_cierre ?? 0, 2) }}</td>
-        </tr>
-        @php $diferencia = round(($cashregister->monto_cierre ?? 0) - $saldo, 2); @endphp
-        <tr class="bold">
-            <td>{{ $diferencia >= 0 ? 'Sobrante' : 'Faltante' }}:</td>
-            <td class="text-right">S/ {{ number_format(abs($diferencia), 2) }}</td>
+            <td>Monto de cierre (calculado automáticamente):</td>
+            <td class="text-right">S/ {{ number_format($cashregister->monto_cierre ?? $saldo, 2) }}</td>
         </tr>
     </table>
 

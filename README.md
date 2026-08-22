@@ -33,7 +33,7 @@ El proyecto deriva de **FacturaFácil** (sistema de facturación electrónica y 
 - Resumen en vivo durante el turno: ventas + ingresos − compras − gastos
 - **Ingresos y Gastos** (`/ingresos-gastos`) modifican el cuadre en vivo
 - **Bloqueo de cierre** si hay estaciones/mesas abiertas
-- Resumen = Flujo de Caja del Día + Sobrante/Faltante
+- Resumen = Flujo de Caja del Día, con monto de cierre calculado automáticamente (sin ingreso manual)
 
 ### Inventario
 - Productos **simples** y **compuestos** (un compuesto descuenta stock de sus componentes; no maneja stock propio)
@@ -43,6 +43,13 @@ El proyecto deriva de **FacturaFácil** (sistema de facturación electrónica y 
 - Reporte de Inventario con totales a precio venta/costo y exportación Excel/PDF
 - Importación/exportación de productos y duplicado con código secuencial
 
+### Reportes de Compras y Ventas
+- Módulo `/reportes` para ventas (≠CO) y compras (CO)
+- Periodos: **diario**, **semanal** y **mensual** con navegación ±
+- Selección: **todos los productos**, **por categoría** o **varios productos** (multiselección)
+- KPIs (documentos, cantidad, importe, IGV), detalle por producto, resumen diario y lista de comprobantes
+- Exportación a **Excel**
+
 ### Control de Personal (Asistencia)
 - Personal con horarios, marcación sin login (kiosco `/marcar`)
 - Reglas de tardanza, faltas graves, suspensión, descuentos
@@ -50,7 +57,8 @@ El proyecto deriva de **FacturaFácil** (sistema de facturación electrónica y 
 
 ### Impresión Térmica ESC/POS
 - **Arquitectura híbrida**: Laravel encola los trabajos y los envía vía HTTP al Print Server local (Node.js)
-- **Slots de impresora**: `productos`, `precuenta`, `caja` (+ impresión del comprobante por PDF de Greenter)
+- **Slots de impresora**: `productos`, `precuenta`, `caja`
+- **Comprobante del POS Chatarra**: tras cobrar, el botón **80mm** imprime automático en el slot `caja` (ESC/POS, `invoiceThermalTicket`, sin QR); el **A4** abre el PDF (Nota de Compra o Greenter según modo)
 - Encoding CP850 (ñ, tildes), cola con reintentos (hasta 3), apertura del cajón de efectivo
 
 ### Roles y Permisos

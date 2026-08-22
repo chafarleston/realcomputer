@@ -152,9 +152,7 @@
     <div>4. + Ingresos: S/ {{ number_format($ingresos, 2) }}</div>
     <div>5. - Gastos: S/ {{ number_format($gastos, 2) }}</div>
     <div class="bold">= SALDO: S/ {{ number_format($saldo, 2) }}</div>
-    <div>Cierre: S/ {{ number_format($cashregister->monto_cierre ?? 0, 2) }}</div>
-    @php $diferencia = round(($cashregister->monto_cierre ?? 0) - $saldo, 2); @endphp
-    <div>{{ $diferencia >= 0 ? 'Sobrante' : 'Faltante' }}: S/ {{ number_format(abs($diferencia), 2) }}</div>
+    <div>Cierre (automático): S/ {{ number_format($cashregister->monto_cierre ?? $saldo, 2) }}</div>
 
     <div class="border-top py-1 mt-1 text-center">
         <div class="bold">GRACIAS POR SU PREFERENCIA</div>
