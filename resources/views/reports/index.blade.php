@@ -80,6 +80,9 @@
                             <a href="{{ route('reports.export', request()->query()) }}" class="btn btn-success">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </a>
+                            <a href="{{ route('reports.export-pdf', request()->query()) }}" class="btn btn-danger">
+                                <i class="fas fa-file-pdf"></i> Exportar PDF
+                            </a>
                             <p class="form-text text-muted d-inline ml-2">{{ $tituloPeriodo }}</p>
                         </div>
                     </div>

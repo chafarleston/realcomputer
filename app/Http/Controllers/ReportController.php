@@ -166,6 +166,103 @@ class ReportController extends Controller
         return $this->exportSpreadsheet($data, 'reporte_' . $tipo . '_' . $periodo . '_' . $desde . '.xlsx');
     }
 
+    public function exportPdf(Request $request)
+    {
+        $companyId = Company::getMainCompany()->id;
+        $company = Company::getMainCompany();
+
+        $tipo = $request->get('tipo', 'venta');
+        $periodo = $request->get('periodo', 'diario');
+        $fecha = $request->get('fecha') ? Carbon::parse($request->get('fecha')) : Carbon::today();
+        $seleccion = $request->get('seleccion', 'todos');
+        $categoriaId = $request->get('categoria_id');
+        $productoIds = (array) $request->get('productos', []);
+
+        [$desde, $hasta] = $this->resolvePeriodo($periodo, $fecha);
+
+        $base = fn ($q) => DB::table('invoice_items')
+            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+            ->join('products', 'invoice_items.product_id', '=', 'products.id')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->where('invoices.company_id', $companyId)
+            ->where('invoices.sunat_estado', '!=', 'ANULADO')
+            ->whereBetween('invoices.fecha_emision', [$desde, $hasta])
+            ->when($tipo !== 'compra', fn ($q) => $q->where('invoices.tipo_documento', '!=', 'CO'))
+            ->when($tipo === 'compra', fn ($q) => $q->where('invoices.tipo_documento', 'CO'))
+            ->when($seleccion === 'categoria' && $categoriaId, fn ($q) => $q->where('products.category_id', $categoriaId))
+            ->when($seleccion === 'productos' && count($productoIds) > 0, fn ($q) => $q->whereIn('invoice_items.product_id', $productoIds));
+
+        $totales = (clone $base(null))->selectRaw(
+            'COUNT(DISTINCT invoices.id) as documentos,
+             SUM(invoice_items.cantidad) as cantidad,
+             SUM(invoice_items.precio_venta) as importe,
+             SUM(invoice_items.igv) as igv'
+        )->first();
+
+        $porProducto = (clone $base(null))
+            ->selectRaw(
+                'invoice_items.product_id,
+                 products.codigo,
+                 products.descripcion,
+                 categories.nombre as categoria,
+                 SUM(invoice_items.cantidad) as cantidad,
+                 SUM(invoice_items.precio_venta) as importe,
+                 COUNT(DISTINCT invoice_items.invoice_id) as documentos'
+            )
+            ->groupBy('invoice_items.product_id', 'products.codigo', 'products.descripcion', 'categories.nombre')
+            ->orderByRaw('importe DESC')
+            ->get();
+
+        $porFecha = (clone $base(null))
+            ->selectRaw(
+                'invoices.fecha_emision,
+                 COUNT(DISTINCT invoices.id) as documentos,
+                 SUM(invoice_items.precio_venta) as importe'
+            )
+            ->groupBy('invoices.fecha_emision')
+            ->orderBy('invoices.fecha_emision')
+            ->get();
+
+        $documentos = DB::table('invoices')
+            ->leftJoin('customers', 'invoices.customer_id', '=', 'customers.id')
+            ->where('invoices.company_id', $companyId)
+            ->where('invoices.sunat_estado', '!=', 'ANULADO')
+            ->whereBetween('invoices.fecha_emision', [$desde, $hasta])
+            ->when($tipo !== 'compra', fn ($q) => $q->where('invoices.tipo_documento', '!=', 'CO'))
+            ->when($tipo === 'compra', fn ($q) => $q->where('invoices.tipo_documento', 'CO'))
+            ->select(
+                'invoices.id',
+                DB::raw("CONCAT(invoices.serie, '-', LPAD(invoices.numero, 8, '0')) as full_number"),
+                'invoices.tipo_documento',
+                'invoices.fecha_emision',
+                'invoices.hora_emision',
+                'invoices.metodo_pago',
+                'invoices.total',
+                'customers.nombre as cliente'
+            )
+            ->orderBy('invoices.fecha_emision')
+            ->orderBy('invoices.id')
+            ->get();
+
+        $tituloPeriodo = $this->tituloPeriodo($periodo, $desde, $hasta);
+
+        $pdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'margin_top' => 12,
+            'margin_bottom' => 12,
+        ]);
+
+        $html = view('reports.pdf', compact(
+            'company', 'tipo', 'periodo', 'desde', 'hasta', 'tituloPeriodo',
+            'totales', 'porProducto', 'porFecha', 'documentos'
+        ))->render();
+
+        $pdf->WriteHTML($html);
+
+        return $pdf->Output('reporte_' . $tipo . '_' . $periodo . '_' . $desde . '.pdf', 'D');
+    }
+
     private function resolvePeriodo(string $periodo, Carbon $fecha): array
     {
         switch ($periodo) {

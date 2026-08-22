@@ -151,6 +151,7 @@ Route::middleware('auth')->group(function () {
     // Reportes de Compras y Ventas
     Route::get('/reportes', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reportes/export', [ReportController::class, 'export'])->name('reports.export');
+    Route::get('/reportes/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
     
     Route::get('/invoices/{invoice}/send', [InvoiceController::class, 'sendToSunat'])->name('invoices.send');
     Route::get('/invoices/nv', [InvoiceController::class, 'nvIndex'])->name('invoices.nv');
