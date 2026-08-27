@@ -3976,6 +3976,7 @@ El sistema se adaptó para una **chatarrería** cuya actividad principal es la *
 | `addItem` | Agrega producto/material: `product_id`, `quantity` (decimal), `price_level` (1-4), notas; `unit_price = priceVenta/Compra(nivel)`; valida stock en modo venta |
 | `updateItem` | Cambia cantidad (`quantity_delta` decimal); valida stock si aumenta en venta |
 | `removeItem` | Elimina item; si quedan 0, anula la operación y libera la estación |
+| `deleteStation` | **Anula la operación de la estación** (`DELETE /scrap-pos/stations/{station}`): NO elimina la tarjeta — cancela items y orden (CANCELLED) y deja la estación `AVAILABLE`; enviada (SENT_TO_KITCHEN) → requiere password admin; items cobrados (`paid_invoice_id`) → bloquea |
 | `sendOrder` | **Enviar a Caja**: guarda vendedor en `notes`, items `PENDING→SENT`, orden → `SENT_TO_KITCHEN`, imprime comanda (slot `productos`) y bloquea la edición |
 | `chargeOrder` | Cobra SOLO operaciones enviadas; crea comprobante (venta: 01/03/NV; compra: CO serie COM); actualiza caja y stock |
 | `printList` | Reimprime la lista (comanda) |
@@ -4014,7 +4015,7 @@ OPEN (PESANDO) → SENT_TO_KITCHEN (POR COBRAR) → COMPLETED (COBRADO)
 
 ### 28.7 Frontend — `resources/views/scrap_pos/index.blade.php`
 
-- Grilla de estaciones con 3 estados visuales: **LIBRE** (verde), **PESANDO** (azul), **POR COBRAR** (naranja con badge "POR COBRAR S/ xx" y vendedor).
+- Grilla de estaciones con 3 estados visuales: **LIBRE** (verde), **PESANDO** (azul), **POR COBRAR** (naranja con badge "POR COBRAR S/ xx" y vendedor). Cada tarjeta tiene un botón **✕** (`deleteStation`) para eliminarla por completo.
 - Modal de estación: lista de items (nivel × precio, cantidad decimal), +/− y eliminar (solo en PESANDO), botón **Enviar a Caja**, **Imprimir Lista**, **Precuenta**, **Cobrar**.
 - Modal **Enviar a Caja**: campo "Cliente/Vendedor" (obligatorio) → `sendOrder` (imprime + bloquea).
 - Tras enviar: banner "ENVIADO A CAJA — PENDIENTE DE PAGO", se ocultan "+ Agregar", +/− y eliminar.

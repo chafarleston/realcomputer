@@ -17,6 +17,7 @@ use App\Services\PrintService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class ScrapPosController extends Controller
 {
@@ -337,6 +338,86 @@ class ScrapPosController extends Controller
         }
 
         return response()->json(['success' => true]);
+    }
+
+    public function deleteStation(Request $request, RestaurantTable $station)
+    {
+        $this->authorize('permission', 'view_pos');
+
+        $mode = $request->get('mode', $station->pos_mode ?? 'venta');
+        if (!in_array($mode, $this->modes)) {
+            return response()->json(['success' => false, 'message' => 'Modo inválido'], 400);
+        }
+
+        try {
+            $activeOrder = RestaurantOrder::where('table_id', $station->id)
+                ->whereNotIn('status', ['COMPLETED', 'CANCELLED'])
+                ->first();
+
+            if (!$activeOrder) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'La estación no tiene una operación activa para anular.'
+                ]);
+            }
+
+            $hasInvoices = RestaurantOrderItem::where('restaurant_order_id', $activeOrder->id)
+                ->whereNotNull('paid_invoice_id')
+                ->exists();
+
+            if ($hasInvoices) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La estación tiene productos ya cobrados (facturados). Cancélalos o elimínalos antes.'
+                ], 400);
+            }
+
+            $sentItems = $activeOrder->items()
+                ->whereIn('kitchen_status', ['SENT', 'READY', 'DELIVERED'])
+                ->count();
+
+            if ($sentItems > 0) {
+                $adminPassword = $request->input('admin_password');
+                if (!$adminPassword) {
+                    return response()->json([
+                        'success' => false,
+                        'requires_admin' => true,
+                        'message' => 'La operación fue enviada a caja. Ingresa la contraseña de administrador para anularla.'
+                    ], 401);
+                }
+
+                $user = auth()->user();
+                if (!$user || !$user->isAdmin() || !Hash::check($adminPassword, $user->password)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Contraseña de administrador incorrecta'
+                    ], 403);
+                }
+            }
+
+            foreach ($activeOrder->items as $item) {
+                $item->update([
+                    'kitchen_status' => 'CANCELLED',
+                    'cancelled_from' => $item->kitchen_status === 'PENDING' ? 'OPEN' : $item->kitchen_status,
+                    'cancelled_at' => now(),
+                    'cancelled_by' => auth()->id(),
+                ]);
+            }
+
+            $activeOrder->update(['status' => 'CANCELLED']);
+
+            $station->update(['status' => 'AVAILABLE']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Operación anulada. La estación quedó disponible.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al anular: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function printList(Request $request, $order)

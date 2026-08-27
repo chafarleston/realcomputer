@@ -29,6 +29,7 @@
   - Cantidades **decimales** (kilos o unidades) × **multiprecio** (Nivel 1-4) = total en vivo.
   - Flujo **Pesador→Cajero**: `sendOrder()` → imprime comanda (slot `productos`) + orden `SENT_TO_KITCHEN` (POR COBRAR) + **bloquea edición** (`assertOrderEditable`); `chargeOrder()` solo cobra pedidos **enviados**.
   - **Polling 10s** `pollStations()` → `GET /scrap-pos/{mode}/stations` (estados LIBRE/PESANDO/POR_COBRAR).
+  - **Anular operación en estación**: `DELETE /scrap-pos/stations/{station}` (`deleteStation`) con botón ✕ en cada tarjeta. **No elimina la tarjeta**: cancela los items y la orden (CANCELLED) y deja la estación `AVAILABLE` (como "anular pedido" del restaurante). Orden enviada (SENT_TO_KITCHEN) → pide password admin; items cobrados (`paid_invoice_id`) → bloquea.
   - **Stock conectado**: compra suma stock; venta valida stock (`assertSaleStock`, acumulado en la orden).
   - **Compras = comprobantes `CO`** con serie `COM`, `sunat_estado = NO_ENVIADO`, **nunca a SUNAT**.
   - **Impresión post-cobro**: modal de éxito (80mm/A4). **80mm** (compra y venta) → `POST /scrap-pos/print/{invoice}/thermal` (`printThermal`) → imprime en el slot **`caja`** vía `PrintService::printScrapInvoice()` + `PlainTextTicket::invoiceThermalTicket()` (ESC/POS, título por tip_doc CO/NV/01/03, kilos decimales, IGV, **sin QR SUNAT**; ya no abre el PDF de Greenter). **A4** → `printCompra` (PDF Nota de Compra) / `/pos/print/{id}/A4` (Greenter). `2 decimales` en precuenta: `prebillTicket()` usa `number_format($qty, entero?0:2)`.

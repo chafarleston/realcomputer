@@ -242,6 +242,7 @@ FacturaFácil es un sistema integral para **chatarrerías peruanas** (y compatib
 | SCR-10 | Compra **debita** caja; venta **suma** a caja (por método de pago) | P0 | ✅ |
 | SCR-11 | Reimpresión de lista y precuenta | P1 | ✅ |
 | SCR-12 | Impresión post-cobro: **80mm** → slot `caja` (ESC/POS, `invoiceThermalTicket`, sin QR); **A4** → PDF (Nota de Compra / Greenter) | P0 | ✅ |
+| SCR-13 | **Anular operación en estación**: botón ✕ en la tarjeta (`DELETE /scrap-pos/stations/{id}`); NO elimina la tarjeta — cancela items/orden y libera (`AVAILABLE`); enviada → password admin; cobrada → bloquea | P0 | ✅ |
 
 ### 3.13 Ingresos y Gastos
 

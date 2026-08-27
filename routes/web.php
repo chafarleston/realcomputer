@@ -194,6 +194,7 @@ Route::get('/customers/search', [CustomerApiController::class, 'search'])->name(
     Route::get('/pos-venta', [ScrapPosController::class, 'index'])->defaults('mode', 'venta')->name('scrap-pos.venta');
     Route::get('/pos-compra', [ScrapPosController::class, 'index'])->defaults('mode', 'compra')->name('scrap-pos.compra');
     Route::post('/scrap-pos/{mode}/open/{station}', [ScrapPosController::class, 'openStation'])->name('scrap-pos.open');
+    Route::delete('/scrap-pos/stations/{station}', [ScrapPosController::class, 'deleteStation'])->name('scrap-pos.deleteStation');
     Route::get('/scrap-pos/orders/{order}', [ScrapPosController::class, 'getOrder'])->name('scrap-pos.order');
     Route::post('/scrap-pos/orders/{order}/items', [ScrapPosController::class, 'addItem'])->name('scrap-pos.items');
     Route::put('/scrap-pos/items/{item}', [ScrapPosController::class, 'updateItem'])->name('scrap-pos.items.update');

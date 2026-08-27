@@ -62,6 +62,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        position: relative;
     }
     .station-card:hover { transform: scale(1.03); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
     .station-card.occupied { border-color: #dc3545; background: #fff5f5; }
@@ -71,6 +72,25 @@
     .station-card.occupied i { color: #dc3545; }
     .station-card.pesando i { color: #007bff; }
     .station-card.por-cobrar i { color: #fd7e14; }
+    .station-delete-btn {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 24px;
+        height: 24px;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        color: #999;
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+    }
+    .station-delete-btn:hover { background: #dc3545; color: #fff; }
     .station-name { font-weight: bold; font-size: 15px; }
     .station-status { font-size: 11px; color: #666; margin-top: 4px; font-weight: bold; }
     .station-seller { font-size: 10px; margin-top: 4px; padding: 2px 8px; border-radius: 10px; background: #fd7e14; color: white; }
@@ -222,6 +242,10 @@
                      data-status="{{ $scrapStatus }}" data-order-id="{{ $activeOrder?->id }}"
                      data-items-count="{{ $scrapItems }}" data-total="{{ $scrapTotal }}"
                      onclick="openStation({{ $station->id }}, '{{ $station->name }}')">
+                    <button type="button" class="station-delete-btn" title="Anular operación y liberar estación"
+                            onclick="event.stopPropagation(); confirmDeleteStation({{ $station->id }}, '{{ $station->name }}', '{{ $mode }}')">
+                        <i class="fas fa-times"></i>
+                    </button>
                     <i class="fas fa-{{ $mode === 'compra' ? 'cart-arrow-down' : 'receipt' }}"></i>
                     <div class="station-name">{{ $station->name }}</div>
                     <div class="station-status">{{ $scrapStatus === 'LIBRE' ? 'LIBRE' : ($scrapStatus === 'POR_COBRAR' ? 'POR COBRAR' : 'PESANDO') }}</div>
@@ -464,6 +488,67 @@
         </div>
     </div>
 </div>
+
+{{-- Cancel station modal --}}
+<div class="modal fade" id="cancelStationModal" tabindex="-1" aria-labelledby="cancelStationModalLabel">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:14px; overflow:hidden;">
+            <div class="modal-header border-0" style="background:linear-gradient(135deg,#f39c12,#e67e22);">
+                <h5 class="modal-title text-white" id="cancelStationModalLabel"><i class="fas fa-exclamation-triangle"></i> Anular Operación</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body text-center pt-4">
+                <div class="animate-icon mb-3">
+                    <div class="icon-circle bg-danger-soft">
+                        <i class="fas fa-times fa-2x text-danger"></i>
+                    </div>
+                </div>
+                <h4 class="mb-1" style="font-weight:600;">¿Anular la operación?</h4>
+                <p class="text-muted mb-3">
+                    Se eliminarán todos los productos de la estación
+                    <strong class="text-dark" id="cancelStationName"></strong>
+                    y quedará disponible para una nueva operación.
+                </p>
+                <div class="text-left d-inline-block text-muted small" style="text-align:left !important;">
+                    <div><i class="fas fa-box-open text-warning mr-2"></i>Se eliminan los productos añadidos</div>
+                    <div><i class="fas fa-id-card text-warning mr-2"></i>La estación queda <b>Libre</b></div>
+                    <div><i class="fas fa-history text-warning mr-2"></i>Se registra el historial de anulación</div>
+                </div>
+                <div id="cancelAdminWrap" class="mt-3 text-left" style="display:none;">
+                    <div class="alert alert-danger py-2">
+                        <i class="fas fa-lock mr-1"></i> Esta operación fue enviada a caja. Ingresa la contraseña de administrador para anularla.
+                    </div>
+                    <input type="password" id="cancelAdminPassword" class="form-control" placeholder="Contraseña de administrador" autocomplete="off">
+                </div>
+                <div id="cancelStationError" class="alert alert-danger py-2 mt-2 mb-0 text-left" style="display:none;"></div>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-lg btn-light px-4" data-dismiss="modal" style="border-radius:30px;"><i class="fas fa-times mr-1"></i> Cancelar</button>
+                <button type="button" class="btn btn-lg btn-danger px-4" id="btnConfirmCancelStation" onclick="doCancelStation()" style="border-radius:30px;">
+                    <i class="fas fa-ban mr-1"></i> Anular operación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Station cancelled success modal --}}
+<div class="modal fade" id="stationCancelledModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="border-radius:14px; overflow:hidden; border:2px solid #28a745;">
+            <div class="modal-body text-center pt-4 pb-4">
+                <div class="icon-circle mx-auto mb-3" style="width:70px; height:70px; border-radius:50%; background:rgba(40,167,69,0.12); display:flex; align-items:center; justify-content:center;">
+                    <i class="fas fa-check-circle text-success" style="font-size:40px;"></i>
+                </div>
+                <h4 class="mb-1" style="font-weight:600; color:#28a745;">Operación Anulada</h4>
+                <p class="text-muted mb-0">La estación <strong id="cancelledStationName"></strong> quedó disponible para nuevas operaciones.</p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4 pt-0">
+                <button type="button" class="btn btn-success btn-lg px-5" data-dismiss="modal" style="border-radius:30px;"><i class="fas fa-check mr-1"></i> Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -478,6 +563,9 @@
     let selectedProduct = null;
     let selectedPriceLevel = 1;
     let lastInvoiceId = null;
+    let cancelStationId = null;
+    let cancelStationMode = 'venta';
+    let cancelNeedsAdmin = false;
 
     function getLastInvoiceId() { return lastInvoiceId; }
 
@@ -503,6 +591,67 @@
                 loadOrder();
             })
             .catch(err => showError(err.message));
+    }
+
+    function confirmDeleteStation(stationId, name, mode) {
+        cancelStationId = stationId;
+        cancelStationMode = mode;
+        cancelNeedsAdmin = false;
+        document.getElementById('cancelStationName').textContent = name;
+        document.getElementById('cancelAdminWrap').style.display = 'none';
+        document.getElementById('cancelAdminPassword').value = '';
+        hideCancelError();
+        $('#cancelStationModal').modal('show');
+    }
+
+    function hideCancelError() {
+        document.getElementById('cancelStationError').style.display = 'none';
+    }
+
+    function showCancelError(msg) {
+        const el = document.getElementById('cancelStationError');
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    function doCancelStation() {
+        const btn = document.getElementById('btnConfirmCancelStation');
+        const password = cancelNeedsAdmin ? document.getElementById('cancelAdminPassword').value : null;
+        hideCancelError();
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Anulando...';
+
+        fetchJson(BASE + '/scrap-pos/stations/' + cancelStationId + '?mode=' + cancelStationMode, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ admin_password: password || '' }),
+        })
+            .then(data => {
+                if (!data.success && data.requires_admin) {
+                    cancelNeedsAdmin = true;
+                    document.getElementById('cancelAdminWrap').style.display = '';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-ban"></i> Anular operación';
+                    return;
+                }
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-ban"></i> Anular operación';
+                if (!data.success) throw new Error(data.message);
+                $('#cancelStationModal').modal('hide');
+                if (currentOrderId) {
+                    $('#orderModal').removeClass('show');
+                    currentOrderId = null;
+                }
+                pollStations();
+                document.getElementById('cancelledStationName').textContent = document.getElementById('cancelStationName').textContent;
+                $('#stationCancelledModal').modal('show');
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-ban"></i> Anular operación';
+                showCancelError(err.message);
+            });
     }
 
     function loadOrder() {
@@ -643,6 +792,10 @@
             return `
             <div class="station-card ${cls}" data-station-id="${s.id}" data-station-name="${s.name}"
                  onclick="openStation(${s.id}, '${s.name}')">
+                <button type="button" class="station-delete-btn" title="Anular operación y liberar estación"
+                        onclick="event.stopPropagation(); confirmDeleteStation(${s.id}, '${s.name}', MODE)">
+                    <i class="fas fa-times"></i>
+                </button>
                 <i class="fas fa-${icon}"></i>
                 <div class="station-name">${s.name}</div>
                 <div class="station-status">${label}</div>
