@@ -370,8 +370,8 @@
         </div>
         <div class="alert alert-danger text-center" id="qtyError" style="display:none; font-size:14px;"></div>
 
-        <button class="btn btn-primary btn-block btn-lg" onclick="confirmAddItem()">
-            <i class="fas fa-check"></i> Agregar a la {{ $mode === 'compra' ? 'compra' : 'venta' }}
+        <button class="btn btn-primary btn-block btn-lg" onclick="confirmAddItem()" id="btnAddItemConfirm">
+            <i class="fas fa-check"></i> <span id="btnAddItemLabel">Agregar a la {{ $mode === 'compra' ? 'compra' : 'venta' }}</span>
         </button>
     </div>
 </div>
@@ -590,6 +590,8 @@
     let currentOrderStatus = 'OPEN';
     let currentSeller = '';
     let selectedProduct = null;
+    let editingItemId = null;
+    let currentItems = [];
     let selectedPriceLevel = 1;
     let lastInvoiceId = null;
     let cancelStationId = null;
@@ -715,6 +717,7 @@
         }
 
         const area = document.getElementById('itemsArea');
+        currentItems = items || [];
         if (!items || items.length === 0) {
             area.innerHTML = '<div class="text-center text-muted py-5">Sin productos todavía. Agregue productos o materiales a la operación.</div>';
         } else {
@@ -727,6 +730,7 @@
                         <span class="px-1 font-weight-bold">${qtyStr}</span>
                         <button onclick="updateQty(${item.id}, 0.5)">+</button>
                     </div>
+                    <button class="btn btn-sm btn-outline-info" onclick="editItem(${item.id}, ${item.product_id || 0})" title="Editar línea"><i class="fas fa-pen"></i></button>
                     <button class="btn btn-sm btn-outline-danger" onclick="removeItem(${item.id})"><i class="fas fa-trash"></i></button>`;
                 return `
                 <div class="order-item">
@@ -917,6 +921,9 @@
     document.getElementById('productSearch').addEventListener('input', applyProductFilter);
 
     function selectProduct(card) {
+        editingItemId = null;
+        const btnLabel = document.getElementById('btnAddItemLabel');
+        if (btnLabel) btnLabel.textContent = 'Agregar a la {{ $mode === 'compra' ? 'compra' : 'venta' }}';
         const raw = {
             id: card.dataset.id, name: card.dataset.desc,
             v1: parseFloat(card.dataset.v1 || 0), v2: parseFloat(card.dataset.v2 || 0),
@@ -937,6 +944,41 @@
         hideQtyError();
         selectPriceLevel(1);
         $('#productPickerModal').removeClass('show');
+        $('#productQtyModal').addClass('show');
+    }
+
+    function editItem(itemId, productId) {
+        const item = currentItems.find(i => i.id === itemId);
+        if (!item) { showError('No se encontró la línea a editar'); return; }
+
+        const card = document.querySelector(`.product-card[data-id="${productId}"]`);
+        if (!card) { showError('Producto no disponible para edición'); return; }
+
+        const raw = {
+            id: card.dataset.id, name: card.dataset.desc,
+            v1: parseFloat(card.dataset.v1 || 0), v2: parseFloat(card.dataset.v2 || 0),
+            v3: parseFloat(card.dataset.v3 || 0), v4: parseFloat(card.dataset.v4 || 0),
+            c1: parseFloat(card.dataset.c1 || 0), c2: parseFloat(card.dataset.c2 || 0),
+            c3: parseFloat(card.dataset.c3 || 0), c4: parseFloat(card.dataset.c4 || 0),
+        };
+        selectedProduct = raw;
+        editingItemId = itemId;
+        selectedPriceLevel = item.price_level || 1;
+
+        $('#qtyProductName').text('Editar: ' + raw.name);
+        const btnLabel = document.getElementById('btnAddItemLabel');
+        if (btnLabel) btnLabel.textContent = 'Guardar cambios';
+
+        document.querySelectorAll('.price-level-chip').forEach(chip => {
+            const level = parseInt(chip.dataset.level);
+            const price = MODE === 'compra' ? raw['c' + level] : raw['v' + level];
+            chip.querySelector('.pl-value').textContent = price.toFixed(4);
+        });
+
+        document.getElementById('qtyInput').value = item.quantity;
+        document.getElementById('qtyNotes').value = item.notes || '';
+        hideQtyError();
+        selectPriceLevel(selectedPriceLevel);
         $('#productQtyModal').addClass('show');
     }
 
@@ -976,7 +1018,12 @@
         document.getElementById('qtyPreview').textContent = 'Total: S/ ' + total.toFixed(4);
     }
 
-    function closeQtyModal() { $('#productQtyModal').removeClass('show'); }
+    function closeQtyModal() {
+        editingItemId = null;
+        const btnLabel = document.getElementById('btnAddItemLabel');
+        if (btnLabel) btnLabel.textContent = 'Agregar a la {{ $mode === 'compra' ? 'compra' : 'venta' }}';
+        $('#productQtyModal').removeClass('show');
+    }
 
     function confirmAddItem() {
         const qty = parseFloat(document.getElementById('qtyInput').value);
@@ -984,6 +1031,22 @@
         hideQtyError();
         if (!selectedProduct || !qty || qty <= 0) { showQtyError('Ingrese una cantidad válida'); return; }
         if (currentPrice() <= 0) { showQtyError('El nivel de precio seleccionado está en 0. Configure el multiprecio del producto.'); return; }
+
+        if (editingItemId) {
+            fetchJson(BASE + '/scrap-pos/items/' + editingItemId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quantity: qty, price_level: selectedPriceLevel, notes: notes }),
+            })
+                .then(data => {
+                    if (!data.success) throw new Error(data.message);
+                    editingItemId = null;
+                    $('#productQtyModal').removeClass('show');
+                    loadOrder();
+                })
+                .catch(err => showQtyError(err.message));
+            return;
+        }
 
         fetchJson(BASE + '/scrap-pos/orders/' + currentOrderId + '/items', {
             method: 'POST',

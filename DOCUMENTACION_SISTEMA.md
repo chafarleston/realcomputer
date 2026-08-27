@@ -3974,7 +3974,7 @@ El sistema se adaptó para una **chatarrería** cuya actividad principal es la *
 | `index($mode)` | Grilla de estaciones; exige caja abierta; auto-crea estaciones si no existen (`ensureStations`) |
 | `openStation($mode, $station)` | Abre la estación (crea o reutiliza la operación OPEN) |
 | `addItem` | Agrega producto/material: `product_id`, `quantity` (decimal), `price_level` (1-4), notas; `unit_price = priceVenta/Compra(nivel)`; valida stock en modo venta |
-| `updateItem` | Cambia cantidad (`quantity_delta` decimal); valida stock si aumenta en venta |
+| `updateItem` | Edita línea: `quantity`/`quantity_delta`, `notes` y **`price_level` opcional** (recalcula `unit_price` vía `priceVenta/Compra` y el total); valida stock si aumenta en venta |
 | `removeItem` | Elimina item; si quedan 0, anula la operación y libera la estación |
 | `deleteStation` | **Anula la operación de la estación** (`DELETE /scrap-pos/stations/{station}`): NO elimina la tarjeta — cancela items y orden (CANCELLED) y deja la estación `AVAILABLE`; enviada (SENT_TO_KITCHEN) → requiere password admin; items cobrados (`paid_invoice_id`) → bloquea |
 | `sendOrder` | **Enviar a Caja**: guarda vendedor en `notes`, items `PENDING→SENT`, orden → `SENT_TO_KITCHEN`, imprime comanda (slot `productos`) y bloquea la edición |

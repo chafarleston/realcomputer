@@ -275,6 +275,7 @@ class ScrapPosController extends Controller
         $validated = $request->validate([
             'quantity' => 'nullable|numeric|min:0.0001',
             'quantity_delta' => 'nullable|numeric',
+            'price_level' => 'nullable|integer|between:1,4',
             'notes' => 'nullable|string|max:500',
         ]);
 
@@ -300,6 +301,8 @@ class ScrapPosController extends Controller
             }
         }
 
+        $priceLevel = (int) ($validated['price_level'] ?? $item->price_level);
+
         if (isset($validated['quantity_delta'])) {
             $item->quantity = $newQty;
         } elseif (isset($validated['quantity'])) {
@@ -308,6 +311,16 @@ class ScrapPosController extends Controller
 
         if (array_key_exists('notes', $validated)) {
             $item->notes = $validated['notes'];
+        }
+
+        if ((int) $priceLevel !== (int) $item->price_level) {
+            $product = Product::find($item->product_id);
+            if ($product) {
+                $item->unit_price = $mode === 'compra'
+                    ? $product->priceCompra((int) $priceLevel)
+                    : $product->priceVenta((int) $priceLevel);
+                $item->price_level = (int) $priceLevel;
+            }
         }
 
         $item->total = round($item->quantity * $item->unit_price, 4);
