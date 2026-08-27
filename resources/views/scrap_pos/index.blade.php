@@ -251,8 +251,8 @@
                     <div class="station-status">{{ $scrapStatus === 'LIBRE' ? 'LIBRE' : ($scrapStatus === 'POR_COBRAR' ? 'POR COBRAR' : 'PESANDO') }}</div>
                     @if($activeOrder)
                         <div class="station-order">{{ $scrapItems }} item(s) · S/ {{ number_format($scrapTotal, 2) }}</div>
-                        @if($scrapStatus === 'POR_COBRAR' && $activeOrder->notes)
-                            <div class="station-seller">{{ $activeOrder->notes }}</div>
+                        @if($activeOrder->notes)
+                            <div class="station-seller"><i class="fas fa-user"></i> {{ $activeOrder->notes }}</div>
                         @endif
                     @endif
                 </div>
@@ -711,7 +711,7 @@
         const customerBadge = document.getElementById('customerBadge');
         if (customerBadge) {
             customerBadge.style.display = currentSeller ? '' : 'none';
-            customerBadge.textContent = currentSeller ? '<i class="fas fa-user"></i> ' + currentSeller : '';
+            customerBadge.innerHTML = currentSeller ? '<i class="fas fa-user"></i> ' + currentSeller : '';
         }
 
         const area = document.getElementById('itemsArea');
@@ -815,6 +815,7 @@
                 currentSeller = data.seller || '';
                 $('#setCustomerModal').modal('hide');
                 loadOrder();
+                pollStations();
             })
             .catch(err => showError(err.message));
     }
@@ -863,7 +864,7 @@
             let extra = '';
             if (s.status !== 'LIBRE') {
                 extra = `<div class="station-order">${s.items_count} item(s) · S/ ${Number(s.total).toFixed(2)}</div>`;
-                if (s.status === 'POR_COBRAR' && s.seller) extra += `<div class="station-seller">${s.seller}</div>`;
+                if (s.seller) extra += `<div class="station-seller"><i class="fas fa-user"></i> ${s.seller}</div>`;
             }
             return `
             <div class="station-card ${cls}" data-station-id="${s.id}" data-station-name="${s.name}"
