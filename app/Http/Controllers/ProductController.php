@@ -12,6 +12,8 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('permission', 'view_products');
+
         $companyId = $request->company_id ?? Company::first()->id;
         $search = $request->get('search');
         $searchType = $request->get('search_type', 'descripcion');
@@ -37,6 +39,8 @@ class ProductController extends Controller
 
     public function create(Request $request)
     {
+        $this->authorize('permission', 'create_products');
+
         $companyId = $request->company_id;
         $lastProduct = Product::where('company_id', $companyId)->orderBy('id', 'desc')->first();
         $nextNumber = $this->getNextProductCode($companyId);
@@ -49,6 +53,8 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('permission', 'create_products');
+
         $validated = $request->validate([
             'company_id' => 'required|exists:companies,id',
             'codigo' => 'required|max:50',
@@ -100,6 +106,8 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
+        $this->authorize('permission', 'view_products');
+
         $prev = Product::where('company_id', $product->company_id)
             ->where('id', '<', $product->id)
             ->orderBy('id', 'desc')
@@ -115,12 +123,16 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
+        $this->authorize('permission', 'edit_products');
+
         $categories = Category::where('company_id', $product->company_id)->whereIn('estado', ['ACTIVO', 'ACT'])->get();
         return view('products.edit', compact('product', 'categories'));
     }
 
     public function update(Request $request, Product $product)
     {
+        $this->authorize('permission', 'edit_products');
+
         $validated = $request->validate([
             'codigo' => 'required|max:50',
             'codigo_barras' => 'nullable|max:50',
@@ -165,6 +177,8 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        $this->authorize('permission', 'delete_products');
+
         $product->update(['estado' => 'INACTIVO']);
         Cache::forget('restaurant_products_' . $product->company_id);
         return back()->with('success', 'Producto desactivado');
@@ -172,6 +186,7 @@ class ProductController extends Controller
 
     public function duplicate(Request $request, Product $product)
     {
+        $this->authorize('permission', 'edit_products');
         $companyId = $product->company_id;
         $nextNumber = $this->getNextProductCode($companyId);
         $newCodigo = 'PROD' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
@@ -199,6 +214,8 @@ class ProductController extends Controller
 
     public function createComposite(Request $request)
     {
+        $this->authorize('permission', 'create_products');
+
         $companyId = $request->company_id ?? Company::first()->id;
         $nextNumber = $this->getNextProductCode($companyId);
         $codigo = 'PROD' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
@@ -215,6 +232,8 @@ class ProductController extends Controller
 
     public function storeComposite(Request $request)
     {
+        $this->authorize('permission', 'create_products');
+
         $validated = $request->validate([
             'company_id' => 'required|exists:companies,id',
             'codigo' => 'required|max:50',
@@ -263,6 +282,8 @@ class ProductController extends Controller
 
     public function editComposite(Product $product)
     {
+        $this->authorize('permission', 'edit_products');
+
         if (!$product->is_composite) {
             abort(404);
         }
@@ -282,6 +303,8 @@ class ProductController extends Controller
 
     public function updateComposite(Request $request, Product $product)
     {
+        $this->authorize('permission', 'edit_products');
+
         if (!$product->is_composite) {
             abort(404);
         }
@@ -328,6 +351,8 @@ class ProductController extends Controller
 
     public function importForm(Request $request)
     {
+        $this->authorize('permission', 'create_products');
+
         $companyId = $request->company_id ?? Company::first()->id;
         $categories = Category::where('company_id', $companyId)->where('estado', 'ACT')->get();
         return view('products.import', compact('companyId', 'categories'));
@@ -335,6 +360,8 @@ class ProductController extends Controller
 
     public function importStore(Request $request)
     {
+        $this->authorize('permission', 'create_products');
+
         $request->validate([
             'company_id' => 'required|exists:companies,id',
         ]);
@@ -526,6 +553,8 @@ class ProductController extends Controller
 
     public function previewImport(Request $request)
     {
+        $this->authorize('permission', 'create_products');
+
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls,csv',
             'company_id' => 'required|exists:companies,id',
@@ -733,6 +762,8 @@ class ProductController extends Controller
 
     public function downloadTemplate()
     {
+        $this->authorize('permission', 'create_products');
+
         return $this->exportSpreadsheet([
             ['codigo', 'codigo_barras', 'descripcion', 'precio', 'precio_compra', 'precio_venta_n2', 'precio_venta_n3', 'precio_venta_n4', 'precio_compra_n2', 'precio_compra_n3', 'precio_compra_n4', 'stock', 'tipo_afectacion', 'umedida', 'categoria', 'codigo_sunat', 'print_destination'],
         ], 'plantilla_productos.xlsx');
@@ -740,6 +771,8 @@ class ProductController extends Controller
 
     public function export(Request $request)
     {
+        $this->authorize('permission', 'view_products');
+
         $companyId = $request->company_id ?? Company::first()->id;
         $products = Product::with('category')
             ->where('company_id', $companyId)
@@ -798,6 +831,8 @@ class ProductController extends Controller
 
     public function inventoryReport(Request $request)
     {
+        $this->authorize('permission', 'view_products');
+
         $companyId = $request->company_id ?? Company::first()->id;
         $categoryId = $request->get('category_id');
         
@@ -826,6 +861,8 @@ class ProductController extends Controller
 
     public function inventoryReportExcel(Request $request)
     {
+        $this->authorize('permission', 'view_products');
+
         $companyId = $request->company_id ?? Company::first()->id;
         $categoryId = $request->get('category_id');
         
@@ -856,6 +893,8 @@ class ProductController extends Controller
 
     public function inventoryReportPdf(Request $request)
     {
+        $this->authorize('permission', 'view_products');
+
         $companyId = $request->company_id ?? Company::first()->id;
         $categoryId = $request->get('category_id');
         

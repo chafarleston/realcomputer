@@ -76,14 +76,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Admin-only resources
-    Route::middleware(['admin'])->group(function () {
-        Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
-        Route::post('/backup/run', [BackupController::class, 'run'])->name('backup.run');
-        Route::resource('companies', CompanyController::class);
-        Route::post('/companies/{company}/certificate', [CompanyController::class, 'updateCertificate'])->name('companies.certificate');
-        Route::post('/companies/{company}/set-main', [CompanyController::class, 'setMain'])->name('companies.setMain');
-        Route::resource('customers', CustomerController::class)->parameters(['customers' => 'customer']);
+    // Products (por permiso, no por middleware admin)
+    Route::group([], function () {
         Route::get('/products/export', [ProductController::class, 'export'])->name('products.export');
         Route::get('/products/import', [ProductController::class, 'importForm'])->name('products.import.form');
         Route::post('/products/import', [ProductController::class, 'importStore'])->name('products.import.store');
@@ -98,6 +92,16 @@ Route::middleware('auth')->group(function () {
         Route::post('/products/composite/store', [ProductController::class, 'storeComposite'])->name('products.composite.store');
         Route::get('/products/{product}/composite/edit', [ProductController::class, 'editComposite'])->name('products.composite.edit');
         Route::put('/products/{product}/composite/update', [ProductController::class, 'updateComposite'])->name('products.composite.update');
+    });
+
+    // Admin-only resources
+    Route::middleware(['admin'])->group(function () {
+        Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
+        Route::post('/backup/run', [BackupController::class, 'run'])->name('backup.run');
+        Route::resource('companies', CompanyController::class);
+        Route::post('/companies/{company}/certificate', [CompanyController::class, 'updateCertificate'])->name('companies.certificate');
+        Route::post('/companies/{company}/set-main', [CompanyController::class, 'setMain'])->name('companies.setMain');
+        Route::resource('customers', CustomerController::class)->parameters(['customers' => 'customer']);
         Route::resource('categories', CategoryController::class);
         Route::resource('suppliers', SupplierController::class);
         Route::resource('purchases', PurchaseController::class);
