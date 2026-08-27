@@ -268,6 +268,7 @@
     <div class="modal-bar">
         <h4><i class="fas fa-receipt"></i> <span id="stationName">Estación</span></h4>
         <div>
+            <button id="btnSetCustomer" class="btn btn-secondary btn-sm action-btn" onclick="showCustomerModal()"><i class="fas fa-user"></i> Establecer Cliente</button>
             <button id="btnSendOrder" class="btn btn-primary btn-sm action-btn" onclick="showSendModal()"><i class="fas fa-paper-plane"></i> Enviar a Caja</button>
             <button class="btn btn-info btn-sm action-btn" onclick="printList()"><i class="fas fa-print"></i> Imprimir Lista</button>
             <button class="btn btn-warning btn-sm action-btn" onclick="printPrecuenta()"><i class="fas fa-file-invoice"></i> Precuenta</button>
@@ -280,7 +281,10 @@
             <i class="fas fa-paper-plane"></i> <strong>ENVIADO A CAJA — PENDIENTE DE PAGO</strong> <span id="sentSeller"></span>
         </div>
         <div class="d-flex justify-content-between align-items-center px-3 pt-3">
-            <button id="btnAddProduct" class="btn btn-primary" onclick="showProductPicker()"><i class="fas fa-plus"></i> Agregar Producto</button>
+            <div>
+                <button id="btnAddProduct" class="btn btn-primary" onclick="showProductPicker()"><i class="fas fa-plus"></i> Agregar Producto</button>
+                <span id="customerBadge" class="badge badge-info ml-2" style="display:none;"></span>
+            </div>
             <span id="orderTotalLabel" class="font-weight-bold" style="font-size:18px;">S/ 0.00</span>
         </div>
         <div class="items-area" id="itemsArea">
@@ -372,6 +376,28 @@
     </div>
 </div>
 
+<div class="modal fade" id="setCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-user"></i> Establecer Cliente</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Registra el cliente/vendedor durante el pesado. Se usará al enviar a caja.</p>
+                <div class="form-group">
+                    <label>Cliente / Vendedor</label>
+                    <input type="text" id="customerNameInput" class="form-control" placeholder="{{ $mode === 'compra' ? 'Ej: Mario (vendedor)' : 'Ej: Juan (cliente)' }}" maxlength="255">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-info" onclick="confirmSetCustomer()"><i class="fas fa-check"></i> Guardar Cliente</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Send modal --}}
 <div class="modal fade" id="sendModal" tabindex="-1">
     <div class="modal-dialog">
@@ -382,9 +408,12 @@
             </div>
             <div class="modal-body">
                 <p>Al enviar se imprimirá la lista de productos y la operación quedará <strong>bloqueada</strong> hasta que el cajero la cobre.</p>
-                <div class="form-group">
+                <div id="sendSellerInputWrap" class="form-group">
                     <label>Cliente / Vendedor <span class="text-danger">*</span></label>
                     <input type="text" id="sendSellerName" class="form-control" placeholder="Ej: Mario" required>
+                </div>
+                <div id="sendSellerPreview" class="alert alert-success mb-0" style="display:none;">
+                    <i class="fas fa-user-check"></i> Cliente: <strong id="sendSellerNameText"></strong>
                 </div>
                 <div class="alert alert-info mb-0" id="sendPreview"></div>
             </div>
@@ -676,8 +705,14 @@
         document.getElementById('sentBanner').style.display = sent ? 'block' : 'none';
         document.getElementById('sentSeller').textContent = sent && currentSeller ? '· ' + currentSeller : '';
         document.getElementById('btnSendOrder').style.display = sent ? 'none' : '';
+        document.getElementById('btnSetCustomer').style.display = sent ? 'none' : '';
         document.getElementById('btnCharge').style.display = sent ? '' : 'none';
         document.getElementById('btnAddProduct').style.display = sent ? 'none' : '';
+        const customerBadge = document.getElementById('customerBadge');
+        if (customerBadge) {
+            customerBadge.style.display = currentSeller ? '' : 'none';
+            customerBadge.textContent = currentSeller ? '<i class="fas fa-user"></i> ' + currentSeller : '';
+        }
 
         const area = document.getElementById('itemsArea');
         if (!items || items.length === 0) {
@@ -745,13 +780,54 @@
     function showSendModal() {
         const total = parseFloat((document.getElementById('orderTotalLabel').textContent || '0').replace(/[^\d.-]/g, ''));
         document.getElementById('sendPreview').textContent = 'Total: S/ ' + total.toFixed(2) + '. Se imprimirá la lista y la operación quedará bloqueada.';
-        document.getElementById('sendSellerName').value = currentSeller || '';
+
+        const seller = (currentSeller || '').trim();
+        const inputWrap = document.getElementById('sendSellerInputWrap');
+        const preview = document.getElementById('sendSellerPreview');
+
+        if (seller) {
+            inputWrap.style.display = 'none';
+            document.getElementById('sendSellerNameText').textContent = seller;
+            preview.style.display = '';
+        } else {
+            inputWrap.style.display = '';
+            preview.style.display = 'none';
+            document.getElementById('sendSellerName').value = '';
+        }
+
         $('#sendModal').modal('show');
     }
 
+    function showCustomerModal() {
+        document.getElementById('customerNameInput').value = currentSeller || '';
+        $('#setCustomerModal').modal('show');
+    }
+
+    function confirmSetCustomer() {
+        const name = document.getElementById('customerNameInput').value.trim();
+        fetchJson(BASE + '/scrap-pos/orders/' + currentOrderId + '/customer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ customer_name: name }),
+        })
+            .then(data => {
+                if (!data.success) throw new Error(data.message);
+                currentSeller = data.seller || '';
+                $('#setCustomerModal').modal('hide');
+                loadOrder();
+            })
+            .catch(err => showError(err.message));
+    }
+
     function confirmSend() {
-        const seller = document.getElementById('sendSellerName').value.trim();
-        if (!seller) { showError('Ingrese el nombre del cliente/vendedor'); return; }
+        let seller = '';
+        const inputWrap = document.getElementById('sendSellerInputWrap');
+        if (inputWrap.style.display !== 'none') {
+            seller = document.getElementById('sendSellerName').value.trim();
+            if (!seller) { showError('Ingrese el nombre del cliente/vendedor'); return; }
+        } else {
+            seller = currentSeller || '';
+        }
         fetchJson(BASE + '/scrap-pos/orders/' + currentOrderId + '/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

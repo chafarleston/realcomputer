@@ -204,6 +204,7 @@ Route::get('/customers/search', [CustomerApiController::class, 'search'])->name(
     Route::put('/scrap-pos/items/{item}', [ScrapPosController::class, 'updateItem'])->name('scrap-pos.items.update');
     Route::delete('/scrap-pos/items/{item}', [ScrapPosController::class, 'removeItem'])->name('scrap-pos.items.destroy');
     Route::post('/scrap-pos/orders/{order}/print-list', [ScrapPosController::class, 'printList'])->name('scrap-pos.printList');
+    Route::post('/scrap-pos/orders/{order}/customer', [ScrapPosController::class, 'setOrderCustomer'])->name('scrap-pos.customer');
     Route::post('/scrap-pos/orders/{order}/precuenta', [ScrapPosController::class, 'printPrecuenta'])->name('scrap-pos.precuenta');
     Route::post('/scrap-pos/orders/{order}/send', [ScrapPosController::class, 'sendOrder'])->name('scrap-pos.send');
     Route::post('/scrap-pos/orders/{order}/charge', [ScrapPosController::class, 'chargeOrder'])->name('scrap-pos.charge');

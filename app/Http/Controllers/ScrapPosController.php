@@ -455,6 +455,38 @@ class ScrapPosController extends Controller
         }
     }
 
+    public function setOrderCustomer(Request $request, $order)
+    {
+        $this->authorize('permission', 'view_pos');
+
+        try {
+            $validated = $request->validate([
+                'customer_name' => 'nullable|string|max:255',
+            ]);
+
+            $order = RestaurantOrder::with(['table'])->findOrFail($order);
+            $mode = $order->table?->pos_mode ?? 'venta';
+
+            if ($order->status !== 'OPEN') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La operación ya fue enviada a caja. No se puede cambiar el cliente.'
+                ], 400);
+            }
+
+            $name = trim($validated['customer_name'] ?? '');
+            $order->update(['notes' => $name ?: null]);
+
+            return response()->json([
+                'success' => true,
+                'seller' => $name,
+                'message' => $name ? "Cliente establecido: {$name}" : 'Cliente eliminado',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     public function sendOrder(Request $request, $order)
     {
         $this->authorize('permission', 'view_pos');
