@@ -12,11 +12,6 @@
             <form method="POST" action="{{ route('cash-movements.store') }}">
                 @csrf
                 <div class="card-body">
-                    @if(!$cajaAbierta)
-                    <div class="alert alert-warning mb-3">
-                        No hay caja abierta. Debe abrir la caja para registrar ingresos o gastos.
-                    </div>
-                    @endif
                     <div class="form-group">
                         <label>Tipo</label>
                         <select name="tipo" class="form-control" required>
@@ -37,7 +32,16 @@
                         <label>Concepto</label>
                         <input type="text" name="concepto" class="form-control" placeholder="Ej: Alquiler, Venta de fierro, Pago de luz...">
                     </div>
-                    <div class="form-group">
+                    @if($cajaAbierta)
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Movimientos de la caja actual <strong>#{{ $cajaAbierta->id }}</strong> (apertura S/ {{ number_format($cajaAbierta->monto_apertura, 2) }}).
+                    </div>
+                    @else
+                    <div class="alert alert-warning mb-3">
+                        No hay caja abierta. Debe abrir la caja para registrar ingresos o gastos. Con la caja cerrada no se muestran movimientos.
+                    </div>
+                    @endif
+                    <div class="form-group" @if(!$cajaAbierta) style="display:none;" @endif>
                         <label>Fecha</label>
                         <input type="datetime-local" name="fecha" class="form-control" value="{{ now()->format('Y-m-d\TH:i') }}">
                     </div>
@@ -56,8 +60,8 @@
             <div class="col-md-6">
                 <div class="small-box bg-success">
                     <div class="inner">
-                        <h3>S/ {{ number_format($movimientos->where('tipo', 'INGRESO')->sum('monto'), 2) }}</h3>
-                        <p>Total Ingresos</p>
+                        <h3>S/ {{ number_format($totalIngresos, 2) }}</h3>
+                        <p>Total Ingresos (caja actual)</p>
                     </div>
                     <div class="icon"><i class="fas fa-arrow-down"></i></div>
                 </div>
@@ -65,8 +69,8 @@
             <div class="col-md-6">
                 <div class="small-box bg-danger">
                     <div class="inner">
-                        <h3>S/ {{ number_format($movimientos->where('tipo', 'GASTO')->sum('monto'), 2) }}</h3>
-                        <p>Total Gastos</p>
+                        <h3>S/ {{ number_format($totalGastos, 2) }}</h3>
+                        <p>Total Gastos (caja actual)</p>
                     </div>
                     <div class="icon"><i class="fas fa-arrow-up"></i></div>
                 </div>
@@ -116,7 +120,11 @@
                         @endforelse
                     </tbody>
                 </table>
-                <div class="card-footer">{{ $movimientos->links() }}</div>
+                <div class="card-footer">
+                    @if(is_object($movimientos) && method_exists($movimientos, 'links'))
+                        {{ $movimientos->links() }}
+                    @endif
+                </div>
             </div>
         </div>
     </div>

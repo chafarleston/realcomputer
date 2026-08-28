@@ -19,12 +19,23 @@ class CashMovementController extends Controller
             ->where('estado', 'ABIERTA')
             ->first();
 
-        $movimientos = CashMovement::where('company_id', $companyId)
-            ->with('user')
-            ->orderBy('fecha', 'desc')
-            ->paginate(25);
+        if ($cajaAbierta) {
+            $movimientos = CashMovement::where('cash_register_id', $cajaAbierta->id)
+                ->with('user')
+                ->orderBy('fecha', 'desc')
+                ->paginate(25);
 
-        return view('cash_movements.index', compact('movimientos', 'cajaAbierta', 'companyId'));
+            $totalIngresos = round((float) CashMovement::where('cash_register_id', $cajaAbierta->id)
+                ->where('tipo', 'INGRESO')->sum('monto'), 2);
+            $totalGastos = round((float) CashMovement::where('cash_register_id', $cajaAbierta->id)
+                ->where('tipo', 'GASTO')->sum('monto'), 2);
+        } else {
+            $movimientos = collect();
+            $totalIngresos = 0;
+            $totalGastos = 0;
+        }
+
+        return view('cash_movements.index', compact('movimientos', 'cajaAbierta', 'companyId', 'totalIngresos', 'totalGastos'));
     }
 
     public function store(Request $request)

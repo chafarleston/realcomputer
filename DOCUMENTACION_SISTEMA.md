@@ -4047,6 +4047,7 @@ OPEN (PESANDO) → SENT_TO_KITCHEN (POR COBRAR) → COMPLETED (COBRADO)
 ### 28.10 Ingresos y Gastos — `CashMovementController`
 
 - Modelo `CashMovement` + tabla `cash_movements` (tipo INGRESO/GASTO, monto, concepto, fecha, usuario, caja).
+- El listado y los totales **solo muestran los movimientos de la caja abierta actual** (`cash_register_id`); con caja cerrada el módulo queda vacío (el historial por caja se consulta en `/cashregisters/{id}`).
 - `POST /ingresos-gastos`: registra el movimiento y **recalcula en vivo** `ingresos_total`/`gastos_total` de la caja abierta.
 - `DELETE /ingresos-gastos/{id}`: elimina y recalcula.
 - Requiere caja abierta. Permiso: `view_cashregisters`. El cierre de caja incluye ambos totales en el cuadre.
