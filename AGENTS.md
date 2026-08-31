@@ -21,6 +21,7 @@
 - `php -l path/to/file.php` — PHP syntax check (no linter configured)
 - `php artisan tinker --execute="..."` — inline tinker (avoid heredoc in PowerShell)
 - `php artisan db:seed --class=ScrapSetupSeeder` — crea pisos/estaciones (Venta 1-5, Compra 1-5) y serie COM (idempotente; el POS los auto-crea igual al primer acceso)
+- `php artisan sistema:reset-ventas` — limpieza total (pide confirmación; `--force` la salta): borra invoices/items, notes, special_documents, summary_documents, print_jobs, cash_movements, cashregisters, restaurant_orders/items; resetea stock a 0, series a 0 y libera mesas; borra archivos físicos (storage/app/sunat y public/qrcodes). Conserva productos/catálogo y el padrón SUNAT. Alternativa: `resetear-sistema.bat` (raíz) — usa `choice` para confirmar y ejecuta el comando con `--force`.
 - Tests: `php artisan test` (uses SQLite :memory:, no DB needed)
 
 ## Architecture notes
