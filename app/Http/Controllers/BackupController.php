@@ -9,7 +9,7 @@ class BackupController extends Controller
 {
     public function index()
     {
-        $defaultPath = storage_path('app/backup/facturafacil_' . now()->format('Ymd_His') . '.sql');
+        $defaultPath = storage_path('app/backup/realcomputer_' . now()->format('Ymd_His') . '.sql');
         return view('backup.index', compact('defaultPath'));
     }
 

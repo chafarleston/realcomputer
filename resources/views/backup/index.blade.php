@@ -29,7 +29,7 @@
                         <input type="text" name="path" class="form-control" required value="{{ old('path', $defaultPath) }}">
                         <small class="form-text text-muted">
                             Especificá la ruta completa donde se guardará el archivo .sql.
-                            Ej: <code>C:\backups\facturafacil.sql</code>
+                            Ej: <code>C:\backups\realcomputer.sql</code>
                         </small>
                     </div>
                 </div>
@@ -47,9 +47,13 @@
             </div>
             <div class="card-body">
                 <ul class="mb-0">
-                    <li>El backup contiene toda la base de datos: empresas, usuarios, productos, facturas, pedidos, etc.</li>
-                    <li>El archivo generado es un script SQL estándar que puede importarse con <code>mysql -u root < archivo.sql</code></li>
-                    <li>Para restaurar desde la terminal de Laragon: <code>mysql -u root facturafacil < ruta\del\backup.sql</code></li>
+                    <li>El backup contiene toda la base de datos <strong>realcomputer</strong>: empresas, usuarios, productos, facturas, pedidos, etc.</li>
+                    <li>El archivo generado es un script SQL estándar.</li>
+                    <li><strong>Para restaurar</strong>, desde la terminal de Laragon (CMD), recordar que la BD del sistema se llama <code>realcomputer</code>:</li>
+                </ul>
+                <pre class="bg-light border p-2 mt-2 mb-0"><code>mysql -u root realcomputer &lt; ruta\del\backup.sql</code></pre>
+                <ul class="mt-2 mb-0">
+                    <li>El usuario <em>root</em> de MySQL local no usa contraseña por defecto. Si tuviera contraseña, usar <code>-p</code>.</li>
                     <li>Recomendación: guardar en un disco externo o en la nube después de generarlo.</li>
                 </ul>
             </div>
