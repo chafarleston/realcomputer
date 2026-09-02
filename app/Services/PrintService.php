@@ -116,6 +116,19 @@ class PrintService
         $this->processQueue();
     }
 
+    public function printCashMovement($movement): void
+    {
+        $printer = $this->getPrinter('caja');
+        if (!$printer) {
+            \Log::warning('No hay impresora configurada para caja');
+            return;
+        }
+        $width = PlainTextTicket::widthForPaper($printer->paper_size);
+        $data = PlainTextTicket::cashMovementTicket($movement, 'escpos', $width);
+        $this->queuePrint($printer, $data, 'cash_movement', get_class($movement), $movement->id);
+        $this->processQueue();
+    }
+
     public function printCancelNotificationGrouped($order, $items): void
     {
         $groups = ['productos' => []];

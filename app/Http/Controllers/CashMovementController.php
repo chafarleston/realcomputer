@@ -70,6 +70,12 @@ class CashMovementController extends Controller
 
         $this->recalculateMovementsTotals($cajaAbierta);
 
+        try {
+            app(\App\Services\PrintService::class)->printCashMovement($movimiento);
+        } catch (\Exception $e) {
+            \Log::error('Print cash movement error: ' . $e->getMessage());
+        }
+
         return back()->with('success', ($request->tipo === 'INGRESO' ? 'Ingreso' : 'Gasto') . ' registrado correctamente');
     }
 

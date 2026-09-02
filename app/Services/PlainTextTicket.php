@@ -435,4 +435,26 @@ class PlainTextTicket
             default => 'DOCUMENTO',
         };
     }
+
+    public static function cashMovementTicket($movement, string $format = 'escpos', int $width = 48): string
+    {
+        $company = \App\Models\Company::find($movement->company_id);
+        $t = new self($format, $width);
+        $t->center('*** ' . ($movement->tipo === 'INGRESO' ? 'INGRESO DE EFECTIVO' : 'EGRESO DE EFECTIVO') . ' ***', '*');
+        $t->blank();
+        if ($company) {
+            $t->center($company->nombre_comercial ?? $company->razon_social);
+            $t->center('RUC: ' . $company->ruc);
+        }
+        $t->text('Nro: ' . str_pad($movement->id, 8, '0', STR_PAD_LEFT));
+        $t->text('Fecha: ' . $movement->fecha->format('d/m/Y H:i'));
+        $t->text('Caja: #' . $movement->cash_register_id);
+        $t->text('Concepto: ' . ($movement->concepto ?: '-'));
+        $t->separator();
+        $t->twoColumns(($movement->tipo === 'INGRESO' ? 'INGRESO' : 'EGRESO') . ':',
+            'S/ ' . number_format((float) $movement->monto, 2));
+        $t->blank();
+        $t->center('Firma / Conforme');
+        return $format === 'escpos' ? $t->getEscPos() : $t->getText();
+    }
 }
