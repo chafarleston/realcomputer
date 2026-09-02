@@ -75,12 +75,14 @@ public function store(Request $request)
             'tax_type' => 'nullable|in:general,restaurant',
             'igv_percent' => 'nullable|numeric|min:0|max:100',
             'reduced_igv_percent' => 'nullable|numeric|min:0|max:100',
+            'allow_negative_stock' => 'nullable|boolean',
             'soap_type_id' => 'nullable|in:01,02',
             'soap_username' => 'nullable|string|max:255',
             'soap_password' => 'nullable|string|max:255',
         ]);
 
         $data = $validated;
+        $data['allow_negative_stock'] = $request->has('allow_negative_stock');
 
         if ($request->hasFile('logo')) {
             if ($company->logo) {

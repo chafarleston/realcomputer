@@ -3995,7 +3995,7 @@ OPEN (PESANDO) → SENT_TO_KITCHEN (POR COBRAR) → COMPLETED (COBRADO)
 **Validaciones de flujo:**
 - `assertOrderEditable()`: `addItem`/`updateItem`/`removeItem` lanzan error si la orden no está `OPEN` ("El pedido ya fue enviado a caja y no se puede modificar").
 - `chargeOrder`: exige `SENT_TO_KITCHEN`; si está `OPEN` → "El pedido aún no fue enviado a caja".
-- `assertSaleStock()`: en modo **venta**, rechaza si `cantidad en la orden + nueva > stock` (o stock de componentes si es compuesto). El POS Compra **no** valida stock (lo incrementa).
+- `assertSaleStock()`: en modo **venta**, rechaza si `cantidad en la orden + nueva > stock` (o stock de componentes si es compuesto). El POS Compra **no** valida stock (lo incrementa). **Configurable** por empresa: si `companies.allow_negative_stock` está activo (Empresa → Editar → Configuración de IGV), la venta **no se bloquea** con stock 0/negativo.
 
 ### 28.5 Creación de comprobantes
 

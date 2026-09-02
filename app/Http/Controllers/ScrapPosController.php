@@ -889,6 +889,11 @@ class ScrapPosController extends Controller
 
     private function assertSaleStock(RestaurantOrder $order, Product $product, float $quantity): void
     {
+        $company = Company::find($order->company_id);
+        if ($company && $company->allow_negative_stock) {
+            return;
+        }
+
         $inOrder = (float) $order->items()
             ->where('product_id', $product->id)
             ->where('kitchen_status', '!=', 'CANCELLED')

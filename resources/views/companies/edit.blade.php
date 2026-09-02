@@ -159,6 +159,17 @@
                             </div>
                         </div>
                     </div>
+                    <div class="form-group mb-0">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="allowNegativeStock" name="allow_negative_stock" value="1" {{ $company->allow_negative_stock ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="allowNegativeStock">
+                                Permitir ventas con stock 0 o negativo
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Si se activa, el POS Venta no bloqueará la venta cuando el producto no tenga stock suficiente. Desactivado por defecto (exige stock disponible).
+                        </small>
+                    </div>
                 </div>
             </div>
 
