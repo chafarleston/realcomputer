@@ -20,11 +20,12 @@ class ReportController extends Controller
         $tipo = $request->get('tipo', 'venta');
         $periodo = $request->get('periodo', 'diario');
         $fecha = $request->get('fecha') ? Carbon::parse($request->get('fecha')) : Carbon::today();
+        $fechaFin = $request->get('fecha_fin') ? Carbon::parse($request->get('fecha_fin')) : null;
         $seleccion = $request->get('seleccion', 'todos');
         $categoriaId = $request->get('categoria_id');
         $productoIds = (array) $request->get('productos', []);
 
-        [$desde, $hasta, $siguiente, $anterior] = $this->resolvePeriodo($periodo, $fecha);
+        [$desde, $hasta, $siguiente, $anterior] = $this->resolvePeriodo($periodo, $fecha, $fechaFin);
 
         $productos = Product::where('company_id', $companyId)
             ->where('estado', 'ACTIVO')
@@ -79,34 +80,13 @@ class ReportController extends Controller
             ->orderBy('invoices.fecha_emision')
             ->get();
 
-        $documentos = DB::table('invoices')
-            ->leftJoin('customers', 'invoices.customer_id', '=', 'customers.id')
-            ->where('invoices.company_id', $companyId)
-            ->where('invoices.sunat_estado', '!=', 'ANULADO')
-            ->whereBetween('invoices.fecha_emision', [$desde, $hasta])
-            ->when($tipo !== 'compra', fn ($q) => $q->where('invoices.tipo_documento', '!=', 'CO'))
-            ->when($tipo === 'compra', fn ($q) => $q->where('invoices.tipo_documento', 'CO'))
-            ->select(
-                'invoices.id',
-                \Illuminate\Support\Facades\DB::raw("CONCAT(invoices.serie, '-', LPAD(invoices.numero, 8, '0')) as full_number"),
-                'invoices.tipo_documento',
-                'invoices.fecha_emision',
-                'invoices.hora_emision',
-                'invoices.metodo_pago',
-                'invoices.total',
-                'customers.nombre as cliente'
-            )
-            ->orderBy('invoices.fecha_emision')
-            ->orderBy('invoices.id')
-            ->get();
-
         $tituloPeriodo = $this->tituloPeriodo($periodo, $desde, $hasta);
 
         return view('reports.index', compact(
-            'tipo', 'periodo', 'fecha', 'seleccion', 'categoriaId', 'productoIds',
+            'tipo', 'periodo', 'fecha', 'fechaFin', 'seleccion', 'categoriaId', 'productoIds',
             'desde', 'hasta', 'siguiente', 'anterior',
             'productos', 'categorias', 'companyId',
-            'totales', 'porProducto', 'porFecha', 'documentos', 'tituloPeriodo'
+            'totales', 'porProducto', 'porFecha', 'tituloPeriodo'
         ));
     }
 
@@ -117,11 +97,12 @@ class ReportController extends Controller
         $tipo = $request->get('tipo', 'venta');
         $periodo = $request->get('periodo', 'diario');
         $fecha = $request->get('fecha') ? Carbon::parse($request->get('fecha')) : Carbon::today();
+        $fechaFin = $request->get('fecha_fin') ? Carbon::parse($request->get('fecha_fin')) : null;
         $seleccion = $request->get('seleccion', 'todos');
         $categoriaId = $request->get('categoria_id');
         $productoIds = (array) $request->get('productos', []);
 
-        [$desde, $hasta] = $this->resolvePeriodo($periodo, $fecha);
+        [$desde, $hasta] = $this->resolvePeriodo($periodo, $fecha, $fechaFin);
 
         $porProducto = DB::table('invoice_items')
             ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
@@ -174,11 +155,12 @@ class ReportController extends Controller
         $tipo = $request->get('tipo', 'venta');
         $periodo = $request->get('periodo', 'diario');
         $fecha = $request->get('fecha') ? Carbon::parse($request->get('fecha')) : Carbon::today();
+        $fechaFin = $request->get('fecha_fin') ? Carbon::parse($request->get('fecha_fin')) : null;
         $seleccion = $request->get('seleccion', 'todos');
         $categoriaId = $request->get('categoria_id');
         $productoIds = (array) $request->get('productos', []);
 
-        [$desde, $hasta] = $this->resolvePeriodo($periodo, $fecha);
+        [$desde, $hasta] = $this->resolvePeriodo($periodo, $fecha, $fechaFin);
 
         $base = fn ($q) => DB::table('invoice_items')
             ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
@@ -223,27 +205,6 @@ class ReportController extends Controller
             ->orderBy('invoices.fecha_emision')
             ->get();
 
-        $documentos = DB::table('invoices')
-            ->leftJoin('customers', 'invoices.customer_id', '=', 'customers.id')
-            ->where('invoices.company_id', $companyId)
-            ->where('invoices.sunat_estado', '!=', 'ANULADO')
-            ->whereBetween('invoices.fecha_emision', [$desde, $hasta])
-            ->when($tipo !== 'compra', fn ($q) => $q->where('invoices.tipo_documento', '!=', 'CO'))
-            ->when($tipo === 'compra', fn ($q) => $q->where('invoices.tipo_documento', 'CO'))
-            ->select(
-                'invoices.id',
-                DB::raw("CONCAT(invoices.serie, '-', LPAD(invoices.numero, 8, '0')) as full_number"),
-                'invoices.tipo_documento',
-                'invoices.fecha_emision',
-                'invoices.hora_emision',
-                'invoices.metodo_pago',
-                'invoices.total',
-                'customers.nombre as cliente'
-            )
-            ->orderBy('invoices.fecha_emision')
-            ->orderBy('invoices.id')
-            ->get();
-
         $tituloPeriodo = $this->tituloPeriodo($periodo, $desde, $hasta);
 
         $pdf = new \Mpdf\Mpdf([
@@ -255,7 +216,7 @@ class ReportController extends Controller
 
         $html = view('reports.pdf', compact(
             'company', 'tipo', 'periodo', 'desde', 'hasta', 'tituloPeriodo',
-            'totales', 'porProducto', 'porFecha', 'documentos'
+            'totales', 'porProducto', 'porFecha'
         ))->render();
 
         $pdf->WriteHTML($html);
@@ -263,14 +224,16 @@ class ReportController extends Controller
         return $pdf->Output('reporte_' . $tipo . '_' . $periodo . '_' . $desde . '.pdf', 'D');
     }
 
-    private function resolvePeriodo(string $periodo, Carbon $fecha): array
+    private function resolvePeriodo(string $periodo, Carbon $fecha, ?Carbon $fechaFin = null): array
     {
         switch ($periodo) {
-            case 'semanal':
-                $desde = $fecha->copy()->startOfWeek()->format('Y-m-d');
-                $hasta = $fecha->copy()->endOfWeek()->format('Y-m-d');
-                $siguiente = $fecha->copy()->addWeek()->format('Y-m-d');
-                $anterior = $fecha->copy()->subWeek()->format('Y-m-d');
+            case 'rango':
+                $desde = $fecha->format('Y-m-d');
+                $hasta = ($fechaFin && $fechaFin->gte($fecha))
+                    ? $fechaFin->format('Y-m-d')
+                    : $fecha->format('Y-m-d');
+                $siguiente = null;
+                $anterior = null;
                 break;
             case 'mensual':
                 $desde = $fecha->copy()->startOfMonth()->format('Y-m-d');
@@ -292,7 +255,7 @@ class ReportController extends Controller
     {
         $fmt = fn ($d) => Carbon::parse($d)->format('d/m/Y');
         return match ($periodo) {
-            'semanal' => "Semana: {$fmt($desde)} - {$fmt($hasta)}",
+            'rango' => "Desde: {$fmt($desde)} - Hasta: {$fmt($hasta)}",
             'mensual' => "Mes: " . Carbon::parse($desde)->isoFormat('MMMM YYYY'),
             default => "Día: {$fmt($desde)}",
         };

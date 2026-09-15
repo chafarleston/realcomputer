@@ -24,15 +24,25 @@
                             <label>Periodo</label>
                             <select name="periodo" class="form-control" id="periodoSelect">
                                 <option value="diario" {{ $periodo === 'diario' ? 'selected' : '' }}>Diario</option>
-                                <option value="semanal" {{ $periodo === 'semanal' ? 'selected' : '' }}>Semanal</option>
+                                <option value="rango" {{ $periodo === 'rango' ? 'selected' : '' }}>Por Fechas</option>
                                 <option value="mensual" {{ $periodo === 'mensual' ? 'selected' : '' }}>Mensual</option>
                             </select>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-2" id="fechaSingleWrap" style="{{ $periodo === 'rango' ? 'display:none;' : '' }}">
                             <label>Fecha</label>
-                            <input type="date" name="fecha" class="form-control" value="{{ $fecha->format('Y-m-d') }}">
+                            <input type="date" name="fecha" class="form-control periodo-fecha" value="{{ $fecha->format('Y-m-d') }}" @if($periodo === 'rango') disabled @endif>
                         </div>
-                        <div class="col-md-2 d-flex align-items-end">
+                        <div class="col-md-4" id="rangoWrap" style="{{ $periodo === 'rango' ? '' : 'display:none;' }}">
+                            <label>Rango de fechas</label>
+                            <div class="input-group">
+                                <input type="date" name="fecha" class="form-control periodo-fecha" value="{{ $fecha->format('Y-m-d') }}" @if($periodo !== 'rango') disabled @endif>
+                                <div class="input-group-prepend input-group-append">
+                                    <span class="input-group-text">hasta</span>
+                                </div>
+                                <input type="date" name="fecha_fin" class="form-control periodo-fecha" value="{{ $fechaFin ? $fechaFin->format('Y-m-d') : $fecha->format('Y-m-d') }}" @if($periodo !== 'rango') disabled @endif>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end" id="navWrap" style="{{ $periodo === 'rango' ? 'display:none;' : '' }}">
                             <div class="btn-group">
                                 <a href="{{ route('reports.index', array_merge(request()->except('fecha'), ['fecha' => $anterior])) }}" class="btn btn-default"><i class="fas fa-chevron-left"></i></a>
                                 <a href="{{ route('reports.index', array_merge(request()->except('fecha'), ['fecha' => $siguiente])) }}" class="btn btn-default"><i class="fas fa-chevron-right"></i></a>
@@ -196,45 +206,7 @@
                 </table>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-12">
-        <div class="card card-outline card-secondary">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-list"></i> Comprobantes</h3>
-            </div>
-            <div class="card-body table-responsive p-0">
-                <table class="table table-hover text-nowrap">
-                    <thead>
-                        <tr>
-                            <th>Comprobante</th>
-                            <th>Fecha</th>
-                            <th>Cliente / Vendedor</th>
-                            <th>Pago</th>
-                            <th class="text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($documentos as $doc)
-                        <tr>
-                            <td>{{ $doc->full_number }}</td>
-                            <td>{{ \Carbon\Carbon::parse($doc->fecha_emision)->format('d/m/Y') }}</td>
-                            <td>{{ $doc->cliente ?? 'CLIENTES VARIOS' }}</td>
-                            <td>{{ $doc->metodo_pago }}</td>
-                            <td class="text-right">S/ {{ number_format((float) $doc->total, 2) }}</td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="5" class="text-center">Sin comprobantes en el periodo</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
+    @endif
 @endsection
 
 @push('scripts')
@@ -253,6 +225,24 @@
 
         seleccion.addEventListener('change', toggleFilas);
         toggleFilas();
+
+        var periodoSelect = document.getElementById('periodoSelect');
+        var fechaSingleWrap = document.getElementById('fechaSingleWrap');
+        var rangoWrap = document.getElementById('rangoWrap');
+        var navWrap = document.getElementById('navWrap');
+
+        function togglePeriodo() {
+            if (!periodoSelect) return;
+            var esRango = periodoSelect.value === 'rango';
+            fechaSingleWrap.style.display = esRango ? 'none' : '';
+            rangoWrap.style.display = esRango ? '' : 'none';
+            navWrap.style.display = esRango ? 'none' : '';
+            fechaSingleWrap.querySelectorAll('input').forEach(function(inp) { inp.disabled = esRango; });
+            rangoWrap.querySelectorAll('input').forEach(function(inp) { inp.disabled = !esRango; });
+        }
+
+        periodoSelect.addEventListener('change', togglePeriodo);
+        togglePeriodo();
     })();
 </script>
 @endpush

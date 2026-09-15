@@ -268,7 +268,22 @@ class PlainTextTicket
         if (count($productos) > 0) {
             $t->center('PRODUCTOS VENDIDOS');
             foreach ($productos as $prod => $d) {
-                $t->twoColumns($d['cantidad'] . 'x ' . $prod, 'S/ ' . number_format($d['total'], 2));
+                $t->twoColumns(number_format($d['cantidad'], 2) . 'x ' . $prod, 'S/ ' . number_format($d['total'], 2));
+            }
+            if (!empty($data['totalVendidos'])) {
+                $t->twoColumns('TOTAL:', number_format($data['totalVendidos']['cantidad'], 2) . ' - S/ ' . number_format($data['totalVendidos']['monto'], 2));
+            }
+            $t->separator();
+        }
+
+        $productosComp = $data['productosComprados'] ?? [];
+        if (count($productosComp) > 0) {
+            $t->center('PRODUCTOS COMPRADOS');
+            foreach ($productosComp as $prod => $d) {
+                $t->twoColumns(number_format($d['cantidad'], 2) . 'x ' . $prod, 'S/ ' . number_format($d['total'], 2));
+            }
+            if (!empty($data['totalComprados'])) {
+                $t->twoColumns('TOTAL:', number_format($data['totalComprados']['cantidad'], 2) . ' - S/ ' . number_format($data['totalComprados']['monto'], 2));
             }
             $t->separator();
         }

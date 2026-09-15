@@ -299,7 +299,8 @@ class CashRegisterController extends Controller
             'categoriasVentas', 'productosVendidos',
             'ventasEfectivo', 'ventasTarjeta', 'ventasYape', 'ventasPlin', 'ventasOtro',
             'totalMetodos', 'lineasEliminadas',
-            'compras', 'comprasBuckets', 'movimientos', 'ingresos', 'gastos', 'saldo'
+            'compras', 'comprasBuckets', 'movimientos', 'ingresos', 'gastos', 'saldo',
+            'productosComprados', 'totalVendidos', 'totalComprados'
         ));
     }
 

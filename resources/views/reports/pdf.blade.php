@@ -87,32 +87,6 @@
         </tbody>
     </table>
 
-    <div class="subtitle">Comprobantes</div>
-    <table>
-        <thead>
-            <tr>
-                <th>Comprobante</th>
-                <th>Fecha</th>
-                <th>Cliente / Vendedor</th>
-                <th>Pago</th>
-                <th class="text-right">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($documentos as $doc)
-            <tr>
-                <td>{{ $doc->full_number }}</td>
-                <td>{{ \Carbon\Carbon::parse($doc->fecha_emision)->format('d/m/Y') }}</td>
-                <td>{{ $doc->cliente ?? 'CLIENTES VARIOS' }}</td>
-                <td>{{ $doc->metodo_pago }}</td>
-                <td class="text-right">S/ {{ number_format((float) $doc->total, 2) }}</td>
-            </tr>
-            @empty
-            <tr><td colspan="5">Sin comprobantes en el periodo</td></tr>
-            @endforelse
-        </tbody>
-    </table>
-
     <div class="footer">
         Generado el {{ now()->format('d/m/Y H:i') }} - {{ $company->razon_social }}
     </div>
