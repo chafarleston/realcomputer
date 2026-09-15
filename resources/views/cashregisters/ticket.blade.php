@@ -122,11 +122,37 @@
     </div>
     @foreach($productosVendidos as $producto => $data)
     <div style="font-size:8px; display:flex;">
-        <span style="min-width:20px;">{{ $data['cantidad'] }}</span>
+        <span style="min-width:20px;">{{ number_format($data['cantidad'], 2) }}</span>
         <span style="flex:1; padding:0 4px;">{{ $producto }}</span>
         <span style="text-align:right;">S/ {{ number_format($data['total'], 2) }}</span>
     </div>
     @endforeach
+    <div class="border-top py-1 mt-1" style="font-size:8px; display:flex; font-weight:bold;">
+        <span style="min-width:20px;">{{ number_format($totalVendidos['cantidad'], 2) }}</span>
+        <span style="flex:1; padding:0 4px;">TOTAL</span>
+        <span style="text-align:right;">S/ {{ number_format($totalVendidos['monto'], 2) }}</span>
+    </div>
+    @endif
+
+    @if(count($productosComprados) > 0)
+    <div class="border-top py-1 mt-1 mb-1 bold">PRODUCTOS COMPRADOS</div>
+    <div style="font-size:8px; border-bottom:1px dashed #000; padding-bottom:2px; margin-bottom:2px; display:flex;">
+        <span style="min-width:20px;">Cant.</span>
+        <span style="flex:1; padding:0 4px;">Producto</span>
+        <span style="text-align:right;">Precio</span>
+    </div>
+    @foreach($productosComprados as $producto => $data)
+    <div style="font-size:8px; display:flex;">
+        <span style="min-width:20px;">{{ number_format($data['cantidad'], 2) }}</span>
+        <span style="flex:1; padding:0 4px;">{{ $producto }}</span>
+        <span style="text-align:right;">S/ {{ number_format($data['total'], 2) }}</span>
+    </div>
+    @endforeach
+    <div class="border-top py-1 mt-1" style="font-size:8px; display:flex; font-weight:bold;">
+        <span style="min-width:20px;">{{ number_format($totalComprados['cantidad'], 2) }}</span>
+        <span style="flex:1; padding:0 4px;">TOTAL</span>
+        <span style="text-align:right;">S/ {{ number_format($totalComprados['monto'], 2) }}</span>
+    </div>
     @endif
 
     @if(count($lineasEliminadas) > 0)

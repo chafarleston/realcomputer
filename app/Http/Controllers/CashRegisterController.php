@@ -366,54 +366,55 @@ class CashRegisterController extends Controller
 
         $ventasPorMetodo = [];
         $categoriasVentas = [];
-        $productosVendidos = [];
 
-        foreach ($ventas as $venta) {
-            $metodo = $venta->metodo_pago ?? 'Efectivo';
+        $productosVendidos = $this->buildProductDetail($ventas);
+        $productosComprados = $this->buildProductDetail($compras);
 
-            if (str_contains($metodo, ' + ')) {
-                $parts = explode(' + ', $metodo);
-                foreach ($parts as $part) {
-                    $part = trim($part);
-                    $met = str_contains($part, '/') ? explode('/', $part)[0] : $part;
-                    if (!isset($ventasPorMetodo[$met])) {
-                        $ventasPorMetodo[$met] = [];
-                    }
-                    $ventasPorMetodo[$met][] = $venta;
-                }
-            } else {
-                $met = str_contains($metodo, '/') ? explode('/', $metodo)[0] : $metodo;
-                if (!isset($ventasPorMetodo[$met])) {
-                    $ventasPorMetodo[$met] = [];
-                }
-                $ventasPorMetodo[$met][] = $venta;
-            }
+        $totalVendidos = $this->sumProductDetail($productosVendidos);
+        $totalComprados = $this->sumProductDetail($productosComprados);
 
-            foreach ($venta->items as $item) {
+        arsort($categoriasVentas);
+
+        return compact('cashregister', 'facturas', 'boletas', 'nvs', 'ventasPorMetodo', 'categoriasVentas', 'productosVendidos', 'productosComprados', 'totalVendidos', 'totalComprados', 'lineasEliminadas', 'ventas', 'compras', 'movimientos', 'ingresos', 'gastos', 'saldo');
+    }
+
+    private function buildProductDetail($invoices): array
+    {
+        $detail = [];
+
+        foreach ($invoices as $invoice) {
+            foreach ($invoice->items as $item) {
                 if ($item->descripcion === 'POR CONSUMO' && !empty($item->detalle_consumo)) {
                     foreach ($item->detalle_consumo as $detalle) {
                         $nombre = $detalle['product_name'] ?? 'Producto';
-                        if (!isset($productosVendidos[$nombre])) {
-                            $productosVendidos[$nombre] = ['cantidad' => 0, 'total' => 0];
+                        if (!isset($detail[$nombre])) {
+                            $detail[$nombre] = ['cantidad' => 0, 'total' => 0];
                         }
-                        $productosVendidos[$nombre]['cantidad'] += $detalle['quantity'] ?? 0;
-                        $productosVendidos[$nombre]['total'] += $detalle['total'] ?? 0;
+                        $detail[$nombre]['cantidad'] += $detalle['quantity'] ?? 0;
+                        $detail[$nombre]['total'] += $detalle['total'] ?? 0;
                     }
                 } else {
                     $productoNombre = $item->descripcion;
-                    if (!isset($productosVendidos[$productoNombre])) {
-                        $productosVendidos[$productoNombre] = ['cantidad' => 0, 'total' => 0];
+                    if (!isset($detail[$productoNombre])) {
+                        $detail[$productoNombre] = ['cantidad' => 0, 'total' => 0];
                     }
-                    $productosVendidos[$productoNombre]['cantidad'] += $item->cantidad;
-                    $productosVendidos[$productoNombre]['total'] += $item->precio_venta;
+                    $detail[$productoNombre]['cantidad'] += $item->cantidad;
+                    $detail[$productoNombre]['total'] += $item->precio_venta;
                 }
             }
         }
 
-        arsort($categoriasVentas);
-        arsort($productosVendidos);
+        arsort($detail);
 
-        return compact('cashregister', 'facturas', 'boletas', 'nvs', 'ventasPorMetodo', 'categoriasVentas', 'productosVendidos', 'lineasEliminadas', 'ventas', 'compras', 'movimientos', 'ingresos', 'gastos', 'saldo');
+        return $detail;
+    }
+
+    private function sumProductDetail(array $detail): array
+    {
+        return [
+            'cantidad' => round(array_sum(array_column($detail, 'cantidad')), 2),
+            'monto' => round(array_sum(array_column($detail, 'total')), 2),
+        ];
     }
 
     public function pdf(CashRegister $cashregister)

@@ -341,6 +341,40 @@
                 <td class="text-right">S/ {{ number_format($data['total'], 2) }}</td>
             </tr>
             @endforeach
+            <tr class="font-weight-bold" style="background:#d4edda;">
+                <td>TOTAL</td>
+                <td class="text-right">{{ number_format($totalVendidos['cantidad'], 2) }}</td>
+                <td class="text-right">S/ {{ number_format($totalVendidos['monto'], 2) }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+@endif
+
+@if(count($productosComprados) > 0)
+<h4 class="mt-4">Productos Comprados</h4>
+<div class="table-responsive">
+    <table class="table table-sm table-bordered">
+        <thead class="thead-dark">
+            <tr>
+                <th>Producto</th>
+                <th class="text-right">Cantidad</th>
+                <th class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($productosComprados as $producto => $data)
+            <tr>
+                <td>{{ $producto }}</td>
+                <td class="text-right">{{ number_format($data['cantidad'], 2) }}</td>
+                <td class="text-right">S/ {{ number_format($data['total'], 2) }}</td>
+            </tr>
+            @endforeach
+            <tr class="font-weight-bold" style="background:#d4edda;">
+                <td>TOTAL</td>
+                <td class="text-right">{{ number_format($totalComprados['cantidad'], 2) }}</td>
+                <td class="text-right">S/ {{ number_format($totalComprados['monto'], 2) }}</td>
+            </tr>
         </tbody>
     </table>
 </div>
