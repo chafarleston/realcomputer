@@ -308,6 +308,14 @@ class PlainTextTicket
         $t->center('INGRESOS Y GASTOS');
         $t->twoColumns('Ingresos:', 'S/ ' . number_format($data['ingresos'] ?? 0, 2));
         $t->twoColumns('Gastos:', 'S/ ' . number_format($data['gastos'] ?? 0, 2));
+        $movimientos = $data['movimientos'] ?? collect();
+        if ($movimientos->count() > 0) {
+            $t->center('MOVIMIENTOS');
+            foreach ($movimientos as $mov) {
+                $signo = $mov->tipo === 'INGRESO' ? '+' : '-';
+                $t->twoColumns($signo . ' ' . \Illuminate\Support\Str::limit($mov->concepto ?? '-', 20), 'S/ ' . number_format($mov->monto, 2));
+            }
+        }
         $t->separator();
 
         $t->center('FLUJO DE CAJA DEL DIA');

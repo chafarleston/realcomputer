@@ -174,6 +174,16 @@
     <div class="border-top py-1 mt-1 mb-1 bold">INGRESOS Y GASTOS</div>
     <div>Ingresos: S/ {{ number_format($ingresos, 2) }}</div>
     <div>Gastos: S/ {{ number_format($gastos, 2) }}</div>
+    @if(count($movimientos) > 0)
+    <div class="border-top py-1 mt-1 mb-1 bold">MOVIMIENTOS</div>
+    @foreach($movimientos as $mov)
+    <div style="font-size:8px; display:flex;">
+        <span style="min-width:12px;">{{ $mov->tipo == 'INGRESO' ? '+' : '-' }}</span>
+        <span style="flex:1; padding:0 4px;">{{ Str::limit($mov->concepto ?? '-', 22) }}</span>
+        <span style="text-align:right;">S/ {{ number_format($mov->monto, 2) }}</span>
+    </div>
+    @endforeach
+    @endif
 
     <div class="border-top py-1 mt-1 mb-1 bold">FLUJO DE CAJA DEL DIA</div>
     <div>1. Apertura: S/ {{ number_format($cashregister->monto_apertura, 2) }}</div>

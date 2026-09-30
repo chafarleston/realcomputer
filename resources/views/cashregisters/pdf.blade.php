@@ -137,6 +137,25 @@
             <td class="text-right">S/ {{ number_format($gastos, 2) }}</td>
         </tr>
     </table>
+    @if(count($movimientos) > 0)
+    <div class="py-1 mb-1 bold">MOVIMIENTOS</div>
+    <table>
+        <tr class="bold border-bottom">
+            <td>Fecha</td>
+            <td>Tipo</td>
+            <td>Concepto</td>
+            <td class="text-right">Monto</td>
+        </tr>
+        @foreach($movimientos as $mov)
+        <tr>
+            <td>{{ $mov->fecha ? $mov->fecha->format('d/m H:i') : '-' }}</td>
+            <td>{{ $mov->tipo }}</td>
+            <td>{{ $mov->concepto ?? '-' }}</td>
+            <td class="text-right">S/ {{ number_format($mov->monto, 2) }}</td>
+        </tr>
+        @endforeach
+    </table>
+    @endif
 
     <div class="border-top py-2 mt-2 mb-1 bold">FLUJO DE CAJA DEL DIA</div>
     <table>
