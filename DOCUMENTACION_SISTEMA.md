@@ -449,7 +449,7 @@ close() [PHP]
 | `DocumentController` | Documentos especiales (retención, guía, percepción) |
 | `AutoPedidoController` | Kiosko de autopedidos (pantalla táctil pública) |
 | `CashMovementController` | Ingresos y Gastos (ajustan el cuadre de caja) |
-| `ReportController` | Reportes de Compras/Ventas: `/reportes` (diario/semanal/mensual, todos/categoría/varios productos, export Excel) |
+| `ReportController` | Reportes de Compras/Ventas: `/reportes` (diario / por fechas `fecha`+`fecha_fin` / mensual; todos/categoría/varios productos; export Excel y PDF) |
 | `GreenterService` | Servicio de facturación SUNAT (no es controlador) |
 | `SummaryService` | Resumen diario de boletas (no es controlador) |
 | `SpecialDocumentService` | Documentos especiales SUNAT (no es controlador) |
@@ -504,7 +504,8 @@ cancelNotification($order, $item)           // Anulación individual
 cancelNotificationGrouped($order, $format='text', $dest='cocina')    // Anulación agrupada (incluye "Anulado por")
 invoiceTicket($invoice)         // STUB (no-op): comprobante se imprime por PDF de Greenter (generatePdf / generateTicketPdf). PrintService::printInvoice() no encola si el ticket es vacío
 invoiceThermalTicket($invoice)  // Comprobante ESC/POS del POS chatarra (slot "caja"): título por tipo_documento (CO→NOTA DE COMPRA, NV→NOTA DE VENTA, 01→FACTURA, 03→BOLETA), kilos decimales, IGV desglosado, sin QR SUNAT
-cashRegisterSummary($cashregister, $data)   // Resumen de caja (Flujo de Caja del Día + monto de cierre automático)
+cashRegisterSummary($cashregister, $data)   // Resumen de caja (Flujo de Caja del Día + Productos Vendidos/Comprados con totales + Movimientos de Ingresos/Gastos + monto de cierre automático)
+cashMovementTicket($movement)   // Recibo ESC/POS de Ingreso/Egreso (slot "caja"): ingreso/egreso, monto, concepto, caja, fecha
 ```
 
 **Encoding**: Usa CP850 (PC850) con tabla de mapeo manual para ñ, tildes y mayúsculas acentuadas.
@@ -4048,7 +4049,7 @@ OPEN (PESANDO) → SENT_TO_KITCHEN (POR COBRAR) → COMPLETED (COBRADO)
 
 - Modelo `CashMovement` + tabla `cash_movements` (tipo INGRESO/GASTO, monto, concepto, fecha, usuario, caja).
 - El listado y los totales **solo muestran los movimientos de la caja abierta actual** (`cash_register_id`); con caja cerrada el módulo queda vacío (el historial por caja se consulta en `/cashregisters/{id}`).
-- `POST /ingresos-gastos`: registra el movimiento y **recalcula en vivo** `ingresos_total`/`gastos_total` de la caja abierta.
+- `POST /ingresos-gastos`: registra el movimiento, **recalcula en vivo** `ingresos_total`/`gastos_total` de la caja abierta e **imprime un recibo automáticamente** en el slot `caja` (`PrintService::printCashMovement()` + `PlainTextTicket::cashMovementTicket()`).
 - `DELETE /ingresos-gastos/{id}`: elimina y recalcula.
 - Requiere caja abierta. Permiso: `view_cashregisters`. El cierre de caja incluye ambos totales en el cuadre.
 
