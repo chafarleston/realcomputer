@@ -238,6 +238,7 @@
                 <li class="nav-item"><a href="{{ route('attendance-rules.index') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Reglas de Tardanza</p></a></li>
                 @endcan
                 <li class="nav-item"><a href="{{ route('attendance.logs') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Marcaciones</p></a></li>
+                <li class="nav-item"><a href="{{ route('attendance.manual-mark') }}" class="nav-link {{ request()->routeIs('attendance.manual-mark*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Marcador Manual</p></a></li>
                 @can('permission', 'view_attendance_reports')
                 <li class="nav-item"><a href="{{ route('attendance.reports') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Reportes</p></a></li>
                 @endcan

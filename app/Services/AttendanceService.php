@@ -243,6 +243,81 @@ class AttendanceService
         return round($valor, 2);
     }
 
+    public function recordManualMark(Personal $personal, Carbon $when, string $event): array
+    {
+        $schedule = $personal->schedule;
+        if (!$schedule) {
+            return ['success' => false, 'message' => 'El trabajador no tiene horario asignado'];
+        }
+
+        $validEvents = ['ENTRADA1', 'SALIDA1', 'ENTRADA2', 'SALIDA2'];
+        if (!in_array($event, $validEvents)) {
+            return ['success' => false, 'message' => 'Tipo de evento inválido'];
+        }
+
+        $attendance = $this->getOrCreate($personal, $when->copy());
+
+        if (!$schedule->isWorkingDay($when)) {
+            $attendance->update(['estado' => 'DESCANSO', 'descuento' => 0, 'tardanza_min' => 0]);
+            return [
+                'success' => false,
+                'message' => $personal->nombre_completo . ' no labora el día ' . $when->toDateString() . ' según su horario',
+            ];
+        }
+
+        AttendanceLog::create([
+            'company_id' => $personal->company_id,
+            'personal_id' => $personal->id,
+            'fecha' => $when->toDateString(),
+            'marcado_en' => $when,
+            'tipo_evento' => $event,
+            'verificado' => true,
+        ]);
+
+        $time = $when->format('H:i:s');
+        $this->applyMarkToAttendance($attendance, $event, $time);
+
+        if (in_array($event, ['ENTRADA1', 'ENTRADA2'])) {
+            $slot = null;
+            foreach ($schedule->eventSequence() as $candidate) {
+                if ($candidate['event'] === $event) {
+                    $slot = $candidate;
+                    break;
+                }
+            }
+            if ($slot) {
+                $tolerance = $event === 'ENTRADA1' ? $schedule->tolerancia_1 : $schedule->tolerancia_2;
+                $entryTime = $this->timeToCarbon($when, $slot['time']);
+                $lateMinutes = max(0, (int) floor(($when->getTimestamp() - $entryTime->getTimestamp()) / 60));
+                $tardanza = max(0, $lateMinutes - (int) $tolerance);
+
+                $attendance->tardanza_min += $tardanza;
+
+                $setting = AttendanceSetting::forCompany($personal->company_id);
+                if ($tardanza > (int) $setting->falta_grave_threshold_min) {
+                    $attendance->estado = 'FALTA_GRAVE';
+                } elseif ($tardanza > (int) $setting->falta_threshold_min) {
+                    $attendance->estado = 'FALTA';
+                } elseif ($tardanza > 0) {
+                    $attendance->estado = 'TARDANZA';
+                }
+            }
+        }
+
+        $attendance->save();
+        $attendance->descuento = $this->computeDiscount($personal, $attendance);
+        $attendance->save();
+
+        return [
+            'success' => true,
+            'event' => $event,
+            'nombre' => $personal->nombre_completo,
+            'hora' => $when->format('H:i:s'),
+            'fecha' => $when->toDateString(),
+            'message' => "Marcación manual registrada: {$event}",
+        ];
+    }
+
     public function finalizeDay(Personal $personal, Carbon $date): Attendance
     {
         $attendance = $this->getOrCreate($personal, $date->copy());

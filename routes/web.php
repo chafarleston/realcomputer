@@ -133,6 +133,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/attendance-rules', [AttendanceRuleController::class, 'index'])->name('attendance-rules.index');
         Route::post('/attendance-rules', [AttendanceRuleController::class, 'update'])->name('attendance-rules.update');
         Route::get('/attendance/logs', [AttendanceController::class, 'logs'])->name('attendance.logs');
+        Route::get('/attendance/manual-mark', [AttendanceController::class, 'manualMarkForm'])->name('attendance.manual-mark');
+        Route::post('/attendance/manual-mark', [AttendanceController::class, 'storeManualMark'])->name('attendance.manual-mark.store');
         Route::delete('/attendance/logs/{attendanceLog}', [AttendanceController::class, 'destroyLog'])->name('attendance.logs.destroy');
         Route::get('/attendance/reports', [AttendanceReportController::class, 'index'])->name('attendance.reports');
         Route::get('/attendance/reports/pdf', [AttendanceReportController::class, 'exportPdf'])->name('attendance.reports.pdf');

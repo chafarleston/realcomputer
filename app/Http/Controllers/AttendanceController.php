@@ -140,6 +140,48 @@ class AttendanceController extends Controller
         return view('attendance.logs', compact('logs', 'personal', 'personalId', 'fecha'));
     }
 
+    public function manualMarkForm()
+    {
+        $this->authorize('permission', 'view_attendance');
+        $companyId = Company::getMainCompany()->id;
+        $personal = Personal::where('company_id', $companyId)->where('estado', 'ACTIVO')->orderBy('apellidos')->get();
+        return view('attendance.manual_mark', compact('personal'));
+    }
+
+    public function storeManualMark(Request $request)
+    {
+        $this->authorize('permission', 'view_attendance');
+
+        $validated = $request->validate([
+            'personal_id' => 'required|exists:personal,id',
+            'fecha' => 'required|date',
+            'hora' => 'required|date_format:H:i',
+            'tipo_evento' => 'required|in:ENTRADA1,SALIDA1,ENTRADA2,SALIDA2',
+        ]);
+
+        $companyId = Company::getMainCompany()->id;
+        $personal = Personal::where('company_id', $companyId)
+            ->where('id', $validated['personal_id'])
+            ->where('estado', 'ACTIVO')
+            ->first();
+
+        if (!$personal) {
+            return back()->with('error', 'Trabajador no encontrado o inactivo');
+        }
+
+        $when = Carbon::parse($validated['fecha'] . ' ' . $validated['hora'] . ':00');
+
+        try {
+            $result = app(AttendanceService::class)->recordManualMark($personal, $when, $validated['tipo_evento']);
+            if (!$result['success']) {
+                return back()->with('error', $result['message'])->withInput();
+            }
+            return back()->with('success', $result['message'] . ' — ' . $result['nombre'] . ' (' . $result['fecha'] . ' ' . $result['hora'] . ')');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al registrar: ' . $e->getMessage());
+        }
+    }
+
     public function destroyLog(AttendanceLog $attendanceLog)
     {
         $this->authorize('permission', 'view_attendance');
